@@ -1,0 +1,22 @@
+{
+  "name": "skillcraft",
+  "owner": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
+  "metadata": {
+    "description": "Personal toolkit of Claude skills for software engineering and product development",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "skillcraft",
+      "description": "Personal toolkit of Claude skills including skill-seekers for automated skill creation",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/skill-seekers"
+      ]
+    }
+  ]
+}
