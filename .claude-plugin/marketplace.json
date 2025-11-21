@@ -10,7 +10,7 @@
   },
   "plugins": [
     {
-      "name": "skill-seekers",
+      "name": "skillcraft",
       "description": "Personal toolkit of Claude skills including skill-seekers for automated skill creation",
       "source": "./",
       "strict": false,
