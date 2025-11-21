@@ -28,7 +28,7 @@ See [skills/skill-seekers](skills/skill-seekers) for detailed usage instructions
 To install this plugin in Claude Code:
 
 ```bash
-claude plugins install https://github.com/teemukaukoranta/skillcraft.git
+claude plugins install https://github.com/Kauko/skillcraft.git
 ```
 
 Or add to your marketplace configuration.
