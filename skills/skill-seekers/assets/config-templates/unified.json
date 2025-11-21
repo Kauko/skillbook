@@ -1,0 +1,34 @@
+{
+  "name": "LIBRARY_NAME",
+  "description": "DESCRIPTION_FOR_SKILL_FRONTMATTER",
+  "merge_mode": "rule-based",
+  "sources": [
+    {
+      "type": "documentation",
+      "base_url": "https://docs.example.com/",
+      "extract_api": true,
+      "max_pages": 200,
+      "selectors": {
+        "main_content": "article",
+        "title": "h1"
+      },
+      "url_patterns": {
+        "include": ["/docs", "/guide"],
+        "exclude": ["/blog", "/about"]
+      }
+    },
+    {
+      "type": "github",
+      "repo": "owner/repo-name",
+      "include_code": true,
+      "include_readme": true,
+      "max_files": 500
+    }
+  ],
+  "categories": {
+    "getting_started": ["intro", "quickstart"],
+    "core_concepts": ["concepts", "fundamentals"],
+    "api_reference": ["api", "reference"],
+    "examples": ["example", "tutorial"]
+  }
+}

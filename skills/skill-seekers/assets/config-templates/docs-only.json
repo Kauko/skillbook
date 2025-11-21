@@ -1,0 +1,22 @@
+{
+  "name": "LIBRARY_NAME",
+  "description": "DESCRIPTION_FOR_SKILL_FRONTMATTER",
+  "base_url": "https://docs.example.com/",
+  "selectors": {
+    "main_content": "article",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/docs", "/guide", "/api"],
+    "exclude": ["/blog", "/about", "/community"]
+  },
+  "categories": {
+    "getting_started": ["intro", "quickstart", "installation"],
+    "core_concepts": ["concepts", "fundamentals"],
+    "api_reference": ["api", "reference"],
+    "guides": ["guide", "tutorial", "how-to"]
+  },
+  "rate_limit": 0.5,
+  "max_pages": 500
+}

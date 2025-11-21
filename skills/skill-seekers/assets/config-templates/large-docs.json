@@ -1,0 +1,26 @@
+{
+  "name": "LIBRARY_NAME",
+  "description": "DESCRIPTION_FOR_SKILL_FRONTMATTER",
+  "base_url": "https://docs.example.com/",
+  "selectors": {
+    "main_content": "article",
+    "title": "h1",
+    "code_blocks": "pre code"
+  },
+  "url_patterns": {
+    "include": ["/docs"],
+    "exclude": ["/blog", "/about"]
+  },
+  "max_pages": 40000,
+  "split_strategy": "router",
+  "split_config": {
+    "target_pages_per_skill": 5000,
+    "create_router": true,
+    "split_by_categories": ["getting-started", "core", "api", "advanced"]
+  },
+  "checkpoint": {
+    "enabled": true,
+    "interval": 1000
+  },
+  "rate_limit": 0.3
+}
