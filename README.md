@@ -1,14 +1,20 @@
 # Skillbook
 
-Personal toolkit of Claude skills for software engineering and product development.
+A Claude Code marketplace for personal productivity plugins.
 
 ## What is Skillbook?
 
-Skillbook is a collection of Claude Code skills designed to enhance productivity in software engineering, documentation writing, and product development. These skills extend Claude's capabilities with specialized knowledge, workflows, and tool integrations.
+Skillbook is a marketplace that provides Claude Code plugins for software engineering and product development. This marketplace will host multiple plugins in the future, each containing specialized skills, workflows, and tool integrations.
 
-## Skills
+## Plugins
 
-### skill-seekers
+### Skillcraft
+
+Personal toolkit of Claude skills for creating and managing AI skills.
+
+#### Skills
+
+##### skill-seekers
 
 Automates the creation of Claude skills from external sources like documentation websites, GitHub repositories, and PDF files.
 
