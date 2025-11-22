@@ -14,6 +14,8 @@ Automates the creation of Claude skills from external sources like documentation
 
 **Use when:** The user asks you to create a skill from external sources.
 
+**Prerequisites:** Requires the [skill-seekers CLI tool](https://github.com/yusufkaraaslan/Skill_Seekers#-now-available-on-pypi) to be installed.
+
 **Features:**
 - Scrape documentation websites
 - Extract content from GitHub repositories
