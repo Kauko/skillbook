@@ -12,11 +12,8 @@
     {
       "name": "skillcraft",
       "description": "Personal toolkit of Claude skills including skill-seekers for automated skill creation",
-      "source": "./",
-      "strict": false,
-      "skills": [
-        "./skills/skill-seekers"
-      ]
+      "source": "./skillcraft",
+      "strict": false
     }
   ]
 }
