@@ -6,8 +6,8 @@
     "name": "Teemu Kaukoranta",
     "email": "teemu.kaukoranta@metosin.fi"
   },
-  "homepage": "https://github.com/Kauko/skillcraft",
-  "repository": "https://github.com/Kauko/skillcraft",
+  "homepage": "https://github.com/Kauko/skillbook",
+  "repository": "https://github.com/Kauko/skillbook",
   "license": "MIT",
   "keywords": ["skills", "software-engineering", "documentation", "product-development"]
 }

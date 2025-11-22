@@ -1,10 +1,10 @@
-# Skillcraft
+# Skillbook
 
 Personal toolkit of Claude skills for software engineering and product development.
 
-## What is Skillcraft?
+## What is Skillbook?
 
-Skillcraft is a collection of Claude Code skills designed to enhance productivity in software engineering, documentation writing, and product development. These skills extend Claude's capabilities with specialized knowledge, workflows, and tool integrations.
+Skillbook is a collection of Claude Code skills designed to enhance productivity in software engineering, documentation writing, and product development. These skills extend Claude's capabilities with specialized knowledge, workflows, and tool integrations.
 
 ## Skills
 
@@ -28,7 +28,7 @@ See [skills/skill-seekers](skills/skill-seekers) for detailed usage instructions
 To install this plugin in Claude Code:
 
 ```bash
-claude plugins install https://github.com/Kauko/skillcraft.git
+claude plugins install https://github.com/Kauko/skillbook.git
 ```
 
 Or add to your marketplace configuration.
