@@ -34,7 +34,7 @@ fi
 Add the claude-docker-setup repository as a git submodule in the `.docker` directory:
 
 ```bash
-git submodule add git@github.com:teemukaukoranta/claude-docker-setup.git .docker
+git submodule add git@github.com:Kauko/claude-docker-setup.git .docker
 ```
 
 **Why use `.docker` directory:**
@@ -201,7 +201,7 @@ cd ~/code/my-project
 git init
 
 # 2. Add Docker setup
-git submodule add git@github.com:teemukaukoranta/claude-docker-setup.git .docker
+git submodule add git@github.com:Kauko/claude-docker-setup.git .docker
 cd .docker
 ./setup-docker.sh
 
