@@ -1,0 +1,13 @@
+{
+  "name": "git-workflow",
+  "description": "Git commit conventions with git-lint and release management with Milestoner",
+  "version": "1.0.0",
+  "author": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
+  "homepage": "https://github.com/Kauko/skillbook",
+  "repository": "https://github.com/Kauko/skillbook",
+  "license": "MIT",
+  "keywords": ["git", "commits", "git-lint", "milestoner", "releases", "changelog", "gitmoji"]
+}

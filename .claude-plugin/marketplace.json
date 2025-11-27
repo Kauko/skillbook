@@ -6,13 +6,79 @@
   },
   "metadata": {
     "description": "Personal toolkit of Claude skills for software engineering and product development",
-    "version": "1.0.0"
+    "version": "2.0.0"
   },
   "plugins": [
     {
+      "name": "skillbook-core",
+      "description": "Meta-orchestration for the skillbook ecosystem - initialize projects with selected skills",
+      "source": "./skillbook-core",
+      "strict": false
+    },
+    {
+      "name": "project-management",
+      "description": "Task tracking optimized for AI agents using Beads git-native issue tracker",
+      "source": "./project-management",
+      "strict": false
+    },
+    {
+      "name": "architecture-modeling",
+      "description": "Central architecture model in Overarch EDN and C4 visualizations with Structurizr",
+      "source": "./architecture-modeling",
+      "strict": false
+    },
+    {
+      "name": "formal-verification",
+      "description": "Formal specification and model checking with TLA+ concepts and Recife",
+      "source": "./formal-verification",
+      "strict": false
+    },
+    {
+      "name": "security-compliance",
+      "description": "Threat modeling with Threagile and policy enforcement with OPA/Rego and Conjtest",
+      "source": "./security-compliance",
+      "strict": false
+    },
+    {
+      "name": "requirements-documentation",
+      "description": "Requirements, specifications, and documentation in Obsidian vault with arc42, ADRs, ISO 25010, and Gherkin specs",
+      "source": "./requirements-documentation",
+      "strict": false
+    },
+    {
+      "name": "clojure-quality",
+      "description": "Linting, formatting, and style conventions for Clojure with Splint, clj-kondo, cljfmt",
+      "source": "./clojure-quality",
+      "strict": false
+    },
+    {
+      "name": "clojure-libraries",
+      "description": "Patterns and best practices for Malli schemas and Guardrails runtime contracts",
+      "source": "./clojure-libraries",
+      "strict": false
+    },
+    {
+      "name": "git-workflow",
+      "description": "Git commit conventions with git-lint and release management with Milestoner",
+      "source": "./git-workflow",
+      "strict": false
+    },
+    {
+      "name": "infrastructure-ops",
+      "description": "Infrastructure as Code with Terraform and observability with SLO/SLI definitions",
+      "source": "./infrastructure-ops",
+      "strict": false
+    },
+    {
       "name": "skillcraft",
-      "description": "Personal toolkit of Claude skills including skill-seekers for automated skill creation",
+      "description": "Skills for creating and managing AI skills including skill-seekers for automated skill creation",
       "source": "./skillcraft",
+      "strict": false
+    },
+    {
+      "name": "container-mastery",
+      "description": "Create and optimize Dockerfiles using layer caching best practices",
+      "source": "./container-mastery",
       "strict": false
     }
   ]

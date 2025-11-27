@@ -1,0 +1,13 @@
+{
+  "name": "formal-verification",
+  "description": "Formal specification and model checking with TLA+ concepts and Recife (Clojure TLA+ library)",
+  "version": "1.0.0",
+  "author": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
+  "homepage": "https://github.com/Kauko/skillbook",
+  "repository": "https://github.com/Kauko/skillbook",
+  "license": "MIT",
+  "keywords": ["tla+", "formal-verification", "recife", "model-checking", "clojure"]
+}

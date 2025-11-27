@@ -1,0 +1,13 @@
+{
+  "name": "clojure-quality",
+  "description": "Linting, formatting, and style conventions for Clojure code with Splint, clj-kondo, cljfmt",
+  "version": "1.0.0",
+  "author": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
+  "homepage": "https://github.com/Kauko/skillbook",
+  "repository": "https://github.com/Kauko/skillbook",
+  "license": "MIT",
+  "keywords": ["clojure", "linting", "formatting", "splint", "clj-kondo", "cljfmt", "style"]
+}

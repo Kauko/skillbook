@@ -1,0 +1,13 @@
+{
+  "name": "requirements-documentation",
+  "description": "Requirements, specifications, and documentation management in Obsidian vault with arc42, ADRs, ISO 25010, and Gherkin specs",
+  "version": "1.0.0",
+  "author": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
+  "homepage": "https://github.com/Kauko/skillbook",
+  "repository": "https://github.com/Kauko/skillbook",
+  "license": "MIT",
+  "keywords": ["documentation", "obsidian", "arc42", "adr", "iso25010", "gherkin", "scenari"]
+}

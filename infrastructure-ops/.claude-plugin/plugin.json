@@ -1,0 +1,13 @@
+{
+  "name": "infrastructure-ops",
+  "description": "Infrastructure as Code with Terraform and observability with SLO/SLI definitions",
+  "version": "1.0.0",
+  "author": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
+  "homepage": "https://github.com/Kauko/skillbook",
+  "repository": "https://github.com/Kauko/skillbook",
+  "license": "MIT",
+  "keywords": ["terraform", "infrastructure", "iac", "slo", "sli", "observability", "monitoring"]
+}

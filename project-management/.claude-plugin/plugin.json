@@ -1,0 +1,13 @@
+{
+  "name": "project-management",
+  "description": "Task tracking optimized for AI agents using git-native tools",
+  "version": "1.0.0",
+  "author": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
+  "homepage": "https://github.com/Kauko/skillbook",
+  "repository": "https://github.com/Kauko/skillbook",
+  "license": "MIT",
+  "keywords": ["tasks", "beads", "project-management", "agents"]
+}

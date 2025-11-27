@@ -1,0 +1,13 @@
+{
+  "name": "architecture-modeling",
+  "description": "Central architecture model in Overarch EDN and C4 visualizations with Structurizr",
+  "version": "1.0.0",
+  "author": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
+  "homepage": "https://github.com/Kauko/skillbook",
+  "repository": "https://github.com/Kauko/skillbook",
+  "license": "MIT",
+  "keywords": ["architecture", "overarch", "structurizr", "c4-model", "edn"]
+}
