@@ -1,0 +1,13 @@
+{
+  "name": "clojure-dev",
+  "description": "Clojure development tooling for Claude Code - REPL integration and delimiter handling",
+  "version": "1.0.0",
+  "author": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
+  "homepage": "https://github.com/Kauko/skillbook",
+  "repository": "https://github.com/Kauko/skillbook",
+  "license": "MIT",
+  "keywords": ["clojure", "repl", "nrepl", "development", "parinfer"]
+}
