@@ -8,6 +8,13 @@ description: Use when creating formal specifications in Clojure using Recife. Tr
 
 Recife is a Clojure library that brings TLA+ model checking to Clojure. Instead of learning TLA+'s syntax, write specifications as Clojure data structures and functions.
 
+**Reference Documentation:** This skill includes comprehensive reference materials in the `references/` directory:
+- [`references/api.md`](references/api.md) - Complete API reference for all Recife functions and macros
+- [`references/examples.md`](references/examples.md) - Five complete, runnable specification examples
+- [`references/tlc-integration.md`](references/tlc-integration.md) - TLC integration, running models, interpreting results
+
+This main document focuses on **workflow and translation patterns**. For detailed API information, see the reference files.
+
 **Key Benefits**:
 - Write specs in familiar Clojure syntax
 - Leverage Clojure's data manipulation capabilities
@@ -83,7 +90,8 @@ Create a new spec using this template:
    - [SAFETY PROPERTY 1]
    - [SAFETY PROPERTY 2]
    - [LIVENESS PROPERTY]"
-  (:require [recife.core :as r]))
+  (:require [recife.core :as r]
+            [recife.helpers :as rh]))
 
 ;; ====================
 ;; State Space
@@ -91,15 +99,15 @@ Create a new spec using this template:
 
 (def initial-state
   "Defines all possible initial states"
-  {:variable-1 0
-   :variable-2 #{"possible" "values"}
-   :variable-3 []})
+  {::variable-1 0
+   ::variable-2 (r/one-of #{"possible" "values"})
+   ::variable-3 []})
 
 ;; ====================
-;; Actions
+;; Processes (Actions)
 ;; ====================
 
-(defn action-1
+(r/defproc ^:fair action-1
   "Description of what this action does
 
    Preconditions:
@@ -109,67 +117,65 @@ Create a new spec using this template:
    Effects:
    - [CHANGE 1]
    - [CHANGE 2]"
-  [state params]
-  (when (precondition? state params)  ;; Guard
-    (-> state
-        (update :variable-1 inc)
-        (update :variable-2 conj (:new-value params)))))
+  (fn [db]
+    (when (precondition? db)  ;; Guard: returns nil if false
+      (-> db
+          (update ::variable-1 inc)
+          (update ::variable-2 conj "new-value")))))
 
-(defn action-2
+(r/defproc ^:fair action-2
   "Description of what this action does"
-  [state params]
-  (when (another-precondition? state)
-    (assoc state :variable-3 (compute-next-value state))))
+  (fn [db]
+    (when (another-precondition? db)
+      (assoc db ::variable-3 (compute-next-value db)))))
 
-;; ====================
-;; Specification
-;; ====================
-
-(def spec
-  "The complete system specification"
-  (r/spec
-    {:init initial-state
-     :next [action-1 action-2]  ;; Non-deterministic choice
-     :invariants [type-ok business-rule-ok]
-     :temporal-properties [liveness-property]}))
+(r/defproc ^:fair complete
+  "Mark system as complete"
+  (fn [db]
+    (when (done? db)
+      (r/done))))
 
 ;; ====================
 ;; Invariants
 ;; ====================
 
-(defn type-ok
+(rh/definvariant type-ok
   "Type invariant: variables have expected types/ranges"
-  [state]
-  (and (nat-int? (:variable-1 state))
-       (set? (:variable-2 state))
-       (vector? (:variable-3 state))))
+  [db]
+  (and (nat-int? (::variable-1 db))
+       (string? (::variable-2 db))
+       (vector? (::variable-3 db))))
 
-(defn business-rule-ok
+(rh/definvariant business-rule-ok
   "Business logic invariant: [DESCRIBE RULE]"
-  [state]
-  (implies (:condition state)
-           (:expected-property state)))
+  [db]
+  (implies (::condition db)
+           (::expected-property db)))
 
 ;; ====================
-;; Temporal Properties
+;; Properties
 ;; ====================
 
-(defn liveness-property
+(rh/defproperty eventually-completed
   "Eventually property: [DESCRIBE WHAT EVENTUALLY HAPPENS]"
-  [state]
-  (r/eventually
-    (= (:status state) :completed)))
+  [db]
+  (rh/eventually (= (::status db) :completed)))
 
 ;; ====================
-;; Model Configuration
+;; Model Execution
 ;; ====================
 
-(def model-config
-  "Configuration for TLC model checker"
-  {:max-states 100000       ;; State space limit
-   :max-trace-length 50     ;; Max steps in counterexample
-   :workers 4               ;; Parallel workers
-   :symmetry-sets []})      ;; Symmetry reduction
+(defn run-spec []
+  "Run the model checker"
+  @(r/run-model
+     initial-state
+     #{action-1
+       action-2
+       complete
+       type-ok
+       business-rule-ok
+       eventually-completed}
+     :trace-example true))
 
 ;; ====================
 ;; Helpers
@@ -179,10 +185,40 @@ Create a new spec using this template:
   "Logical implication: p => q"
   (or (not p) q))
 
-(defn precondition? [state params]
+(defn precondition? [db]
   "Check if action preconditions are satisfied"
-  (and (:some-flag state)
-       (>= (:variable-1 state) (:threshold params))))
+  (and (::some-flag db)
+       (>= (::variable-1 db) 10)))
+
+(defn another-precondition? [db]
+  (some? (::variable-2 db)))
+
+(defn compute-next-value [db]
+  [(::variable-1 db)])
+
+(defn done? [db]
+  (= (::status db) :completed))
+
+;; ====================
+;; Testing
+;; ====================
+
+(comment
+  ;; Run verification
+  (def result (run-spec))
+
+  ;; Check success
+  (:success? result)
+
+  ;; View trace
+  (count (:trace result))
+  (first (:trace result))
+
+  ;; Debug violation
+  (when-not (:success? result)
+    (println "Error:" (:error result))
+    (clojure.pprint/pprint (:counterexample result)))
+  )
 ```
 
 ## Gherkin to Recife Translation
@@ -232,7 +268,8 @@ Feature: Account Transfer
    - Money is always conserved (safety)
    - Balances never go negative (safety)
    - Transfers with sufficient balance eventually succeed (liveness)"
-  (:require [recife.core :as r]))
+  (:require [recife.core :as r]
+            [recife.helpers :as rh]))
 
 ;; ====================
 ;; State Space
@@ -240,127 +277,127 @@ Feature: Account Transfer
 
 (def initial-state
   "Initial state space: various starting balances"
-  {:balance-a #{0 20 50 100}      ;; Non-deterministic initial values
-   :balance-b #{0 50 100}
-   :total nil                      ;; Computed from balances
-   :last-transfer nil})            ;; Track last operation
+  {::balance-a (r/one-of #{50 100})
+   ::balance-b (r/one-of #{50 100})
+   ::total nil
+   ::last-transfer nil})
 
-(defn compute-total [state]
-  (+ (:balance-a state) (:balance-b state)))
-
-(defn init [state]
+(defn init-with-total [state]
   "Initialize with consistent total"
-  (assoc state :total (compute-total state)))
+  (assoc state ::total (+ (::balance-a state) (::balance-b state))))
 
 ;; ====================
-;; Actions
+;; Processes
 ;; ====================
 
-(defn transfer-a-to-b
-  "Transfer amount from account A to B
+(r/defproc ^:fair transfer-a-to-b
+  "Transfer 30 from account A to B"
+  (fn [db]
+    (when (>= (::balance-a db) 30)  ;; Guard: sufficient balance
+      (-> db
+          (update ::balance-a - 30)
+          (update ::balance-b + 30)
+          (assoc ::last-transfer {:from :a :to :b :amount 30})))))
 
-   Preconditions:
-   - amount > 0
-   - account A has sufficient balance
+(r/defproc ^:fair transfer-b-to-a
+  "Transfer 30 from account B to A"
+  (fn [db]
+    (when (>= (::balance-b db) 30)
+      (-> db
+          (update ::balance-b - 30)
+          (update ::balance-a + 30)
+          (assoc ::last-transfer {:from :b :to :a :amount 30})))))
 
-   Effects:
-   - Decrease balance-a by amount
-   - Increase balance-b by amount
-   - Total remains unchanged (conservation)"
-  [state amount]
-  (when (and (pos? amount)
-             (>= (:balance-a state) amount))  ;; Guard: sufficient balance
-    (-> state
-        (update :balance-a - amount)
-        (update :balance-b + amount)
-        (assoc :last-transfer {:from :a :to :b :amount amount}))))
-
-(defn transfer-b-to-a
-  "Transfer amount from account B to A"
-  [state amount]
-  (when (and (pos? amount)
-             (>= (:balance-b state) amount))
-    (-> state
-        (update :balance-b - amount)
-        (update :balance-a + amount)
-        (assoc :last-transfer {:from :b :to :a :amount amount}))))
-
-;; Generate multiple transfer amounts to explore
-(defn all-transfer-actions [state]
-  (for [amount [10 20 30 50]
-        action [transfer-a-to-b transfer-b-to-a]]
-    (action state amount)))
+(r/defproc ^:fair complete
+  "Complete after at least one transfer"
+  (fn [db]
+    (when (::last-transfer db)
+      (r/done))))
 
 ;; ====================
 ;; Invariants
 ;; ====================
 
-(defn type-ok
+(rh/definvariant type-ok
   "Type invariant: balances are natural numbers"
-  [state]
-  (and (nat-int? (:balance-a state))
-       (nat-int? (:balance-b state))
-       (nat-int? (:total state))))
+  [db]
+  (and (nat-int? (::balance-a db))
+       (nat-int? (::balance-b db))
+       (nat-int? (::total db))))
 
-(defn money-conserved
+(rh/definvariant money-conserved
   "Safety invariant: total money is always conserved"
-  [state]
-  (= (+ (:balance-a state) (:balance-b state))
-     (:total state)))
+  [db]
+  (= (+ (::balance-a db) (::balance-b db))
+     (::total db)))
 
-(defn no-negative-balance
+(rh/definvariant no-negative-balance
   "Safety invariant: balances never go negative"
-  [state]
-  (and (>= (:balance-a state) 0)
-       (>= (:balance-b state) 0)))
+  [db]
+  (and (>= (::balance-a db) 0)
+       (>= (::balance-b db) 0)))
 
 ;; ====================
-;; Specification
+;; Properties
 ;; ====================
 
-(def spec
-  (r/spec
-    {:init (map init initial-state)
-     :next all-transfer-actions
-     :invariants [type-ok money-conserved no-negative-balance]}))
+(rh/defproperty transfer-eventually-happens
+  "At least one transfer eventually happens"
+  [db]
+  (rh/eventually (some? (::last-transfer db))))
 
 ;; ====================
-;; Model Configuration
+;; Model Execution
 ;; ====================
 
-(def model-config
-  {:max-states 50000
-   :max-trace-length 20
-   :workers 4})
-```
+(defn run-transfer-spec []
+  "Run the model checker"
+  @(r/run-model
+     (init-with-total initial-state)
+     #{transfer-a-to-b
+       transfer-b-to-a
+       complete
+       type-ok
+       money-conserved
+       no-negative-balance
+       transfer-eventually-happens}
+     :trace-example true))
 
-**Test File** (`test/specs/account_transfer_spec_test.clj`):
+;; ====================
+;; Testing
+;; ====================
 
-```clojure
-(ns specs.account-transfer-spec-test
-  (:require [clojure.test :refer :all]
-            [recife.core :as r]
-            [specs.account-transfer-spec :as spec]))
+(comment
+  ;; Run verification
+  (def result (run-transfer-spec))
 
-(deftest account-transfer-verification
-  (testing "Account transfer satisfies all invariants"
-    (let [result (r/check spec/spec spec/model-config)]
-      (is (:success? result)
-          (str "Invariant violation found:\n"
-               (r/format-counterexample (:counterexample result)))))))
+  ;; Check success
+  (:success? result)
+
+  ;; View conservation across trace
+  (doseq [state (:trace result)]
+    (println "A:" (::balance-a state)
+             "B:" (::balance-b state)
+             "Total:" (::total state)
+             "Sum:" (+ (::balance-a state) (::balance-b state))))
+  )
 ```
 
 ### Running the Model Checker
 
 ```bash
-# Run verification
-clj -X:test -m specs.account-transfer-spec-test
+# Run verification from REPL
+clj
+user=> (require 'specs.account-transfer-spec)
+user=> (def result (specs.account-transfer-spec/run-transfer-spec))
+user=> (:success? result)
 
-# Or with verbose output
-TLC_DEBUG=true clj -X:test -m specs.account-transfer-spec-test
+# Or run as script
+clj -M -e "(require 'specs.account-transfer-spec) (clojure.pprint/pprint (specs.account-transfer-spec/run-transfer-spec))"
 
 # Save results
-clj -X:test -m specs.account-transfer-spec-test | tee vault/specifications/formal/account-transfer-results.txt
+clj -M -e "(require 'specs.account-transfer-spec) (clojure.pprint/pprint (specs.account-transfer-spec/run-transfer-spec))" \
+  | tee vault/specifications/formal/account-transfer-results.txt
 ```
 
 ## Interpreting Counterexamples
@@ -503,64 +540,104 @@ EOF
 
 ### Pattern 1: Non-Deterministic Choice
 
-Model multiple possible actions:
+Model multiple possible values:
 
 ```clojure
-(defn next-actions [state]
-  "Non-deterministic choice among multiple actions"
-  (concat
-    (for [amount [10 20 30]]
-      (transfer-a-to-b state amount))
-    (for [amount [5 15]]
-      (transfer-b-to-a state amount))
-    [(stutter state)]))  ;; Include stuttering (no-op)
+;; In initial state
+(def initial-state
+  {::amount (r/one-of #{10 20 30})
+   ::direction (r/one-of #{:a-to-b :b-to-a})})
 
-(defn stutter [state]
-  "Action that doesn't change state (allowed in TLA+)"
-  state)
+;; In process logic
+(r/defproc ^:fair transfer
+  (fn [db]
+    (let [success? (r/one-of #{true false})]  ;; Non-deterministic outcome
+      (if success?
+        (perform-transfer db)
+        db))))  ;; Return unchanged on failure
 ```
 
-### Pattern 2: Fairness Constraints
+### Pattern 2: Fairness (^:fair metadata)
 
-Ensure actions eventually happen:
+Ensure actions eventually happen when enabled:
 
 ```clojure
-(def spec-with-fairness
-  (r/spec
-    {:init initial-state
-     :next all-actions
-     :invariants [safety-invariant]
-     :fairness [:weak-fair transfer-a-to-b  ;; Eventually happens if enabled
-                :strong-fair transfer-b-to-a]}))  ;; Infinitely often enabled => infinitely often happens
+;; Fair process: guaranteed to execute if enabled
+(r/defproc ^:fair must-eventually-happen
+  (fn [db]
+    (when (enabled? db)
+      (perform-action db))))
+
+;; Without fairness, the model checker can ignore this action
+(r/defproc may-never-happen
+  (fn [db]
+    (perform-action db)))
 ```
+
+**Use `^:fair` for:**
+- Actions that represent progress
+- Liveness properties (they require fairness)
+- Actions that must eventually happen
 
 ### Pattern 3: Temporal Properties
 
 Specify liveness properties:
 
 ```clojure
-(defn eventual-completion
-  "Every request eventually completes"
-  [state]
-  (r/leads-to
-    (contains? (:pending-requests state) :req-123)  ;; If request exists
-    (contains? (:completed-requests state) :req-123)))  ;; Eventually completed
+;; Eventually reaches a state
+(rh/defproperty eventual-completion
+  [db]
+  (rh/eventually (= (::status db) :completed)))
 
-(defn always-eventually-idle
-  "System repeatedly returns to idle state"
-  [state]
-  (r/always (r/eventually (= (:status state) :idle))))
+;; Repeatedly returns to a state (infinite recurrence)
+(rh/defproperty always-eventually-idle
+  [db]
+  (rh/always (rh/eventually (= (::status db) :idle))))
+
+;; Eventually stabilizes to a state (stabilization)
+(rh/defproperty eventually-stable
+  [db]
+  (rh/eventually (rh/always (= (::status db) :completed))))
 ```
 
-### Pattern 4: Symmetry Reduction
+### Pattern 4: State Space Reduction with Constraints
 
-Reduce state space with symmetry:
+Reduce state space by filtering out invalid states:
 
 ```clojure
-(def model-config-with-symmetry
-  {:max-states 100000
-   :symmetry-sets [[:process-1 :process-2 :process-3]  ;; Processes are symmetric
-                   [:account-a :account-b]]})           ;; Accounts are symmetric
+(rh/defconstraint reasonable-bounds
+  "Limit exploration to reasonable values"
+  [db]
+  (and (<= (::counter db) 100)
+       (<= (count (::queue db)) 50)))
+
+(rh/defconstraint no-negative-values
+  "Filter out negative values early"
+  [db]
+  (and (>= (::balance-a db) 0)
+       (>= (::balance-b db) 0)))
+```
+
+### Pattern 5: State Machine with Local PC
+
+Use local program counter for multi-step processes:
+
+```clojure
+(r/defproc ^:fair multi-step-process
+  {:local {:pc ::start}}  ;; Local state
+  (fn [db local]
+    (case (:pc local)
+
+      ::start
+      [db (r/goto ::step-2)]
+
+      ::step-2
+      [(update db ::counter inc)
+       (r/goto ::step-3)]
+
+      ::step-3
+      [(assoc db ::status :done)
+       (r/done)])))
 ```
 
 ## Integration with Development Workflow
@@ -747,52 +824,47 @@ vault/specifications/formal/
 ```
 </documentation-structure>
 
-## Reference: Recife API
+## Quick API Reference
 
-### Core Functions
+**Note:** For complete API documentation, see [`references/api.md`](references/api.md)
+
+### Essential Functions
 
 ```clojure
-;; Create specification
-(r/spec {:init initial-states
-         :next action-functions
-         :invariants invariant-predicates
-         :temporal-properties temporal-properties
-         :fairness fairness-constraints})
+;; Define process
+(r/defproc ^:fair process-name
+  (fn [db] ...))
 
 ;; Run model checker
-(r/check spec config)
-;; Returns: {:success? boolean
-;;           :states-explored number
-;;           :counterexample trace-if-violation}
+@(r/run-model initial-state
+              #{processes invariants properties}
+              :trace-example true)
 
-;; Temporal operators
-(r/always pred)           ;; □pred - always holds
-(r/eventually pred)       ;; ◇pred - eventually holds
-(r/leads-to p q)         ;; p ~> q - p implies eventually q
-(r/unless p q)           ;; p unless q
+;; Define invariant
+(rh/definvariant invariant-name
+  [state]
+  (boolean-expression state))
 
-;; Format counterexample for humans
-(r/format-counterexample trace)
+;; Define property
+(rh/defproperty property-name
+  [state]
+  (rh/eventually condition))
 ```
 
-### Helper Patterns
+### Key Concepts
 
-```clojure
-;; Logical implication
-(defn implies [p q]
-  (or (not p) q))
+- **`r/defproc`**: Define state transitions (actions)
+- **`r/run-model`**: Execute model checking
+- **`rh/definvariant`**: Safety properties (always hold)
+- **`rh/defproperty`**: Liveness properties (eventually hold)
+- **`r/one-of`**: Non-deterministic choice
+- **`r/done`**: Mark process completion
+- **`^:fair`**: Fairness annotation (required for liveness)
 
-;; Universal quantification
-(every? predicate collection)
-
-;; Existential quantification
-(some predicate collection)
-
-;; Set operations
-(clojure.set/subset? s1 s2)
-(clojure.set/intersection s1 s2)
-(clojure.set/difference s1 s2)
-```
+**See also:**
+- [`references/api.md`](references/api.md) - Complete API reference
+- [`references/examples.md`](references/examples.md) - Full working examples
+- [`references/tlc-integration.md`](references/tlc-integration.md) - TLC integration details
 
 ## Learning Resources
 
@@ -805,62 +877,134 @@ After creating your first Recife spec:
 
 ## Troubleshooting
 
-### TLC Takes Too Long
+### Model Checking Takes Too Long
 
 If model checking is slow:
 
-1. **Reduce state space**:
+1. **Reduce non-deterministic choices**:
    ```clojure
    ;; Instead of all possible values
-   {:balance #{0 10 20 30 40 50 60 70 80 90 100}}
+   {::balance (r/one-of #{0 10 20 30 40 50 60 70 80 90 100})}
 
    ;; Use representative values
-   {:balance #{0 50 100}}
+   {::balance (r/one-of #{0 50 100})}
    ```
 
-2. **Add symmetry**:
+2. **Add constraints to prune state space**:
    ```clojure
-   {:symmetry-sets [[:account-a :account-b]]}
+   (rh/defconstraint limit-exploration
+     [db]
+     (<= (::counter db) 50))
    ```
 
 3. **Bound sequences**:
    ```clojure
-   (defn bounded-append [vec elem]
-     (if (< (count vec) MAX-LENGTH)
-       (conj vec elem)
-       vec))
+   (defn bounded-conj [coll elem max-size]
+     (if (< (count coll) max-size)
+       (conj coll elem)
+       coll))
    ```
 
-4. **Check fewer states**:
-   ```clojure
-   {:max-states 10000}  ;; Start small, increase if needed
-   ```
+4. **Simplify specification**: Test with minimal features first
 
-### False Positives
+### False Positives (Violations That Seem Wrong)
 
-If TLC reports violations that seem wrong:
+If TLC reports violations that seem incorrect:
 
 1. **Review invariant**: Is it too strict?
+   ```clojure
+   (rh/definvariant maybe-too-strict
+     [db]
+     ;; Check if this really needs to hold in ALL states
+     (= (::status db) :active))
+   ```
+
 2. **Check initial state**: Are all initial states valid?
-3. **Trace through manually**: Draw state diagram
-4. **Add debug logging**: Print state in action functions
-
-### TLC Finds Nothing
-
-If TLC completes but finds no issues (and you expected some):
-
-1. **Check state space**: Is it being explored?
    ```clojure
-   (println "States explored:" (:states-explored result))
+   ;; Verify initial state satisfies invariants
+   (type-ok initial-state)
+   (business-rule-ok initial-state)
    ```
 
-2. **Verify actions are reachable**: Add temporary invariant that should fail
+3. **Trace through manually**: Walk through counterexample step by step
+4. **Review guards**: Do your guards correctly prevent invalid transitions?
+
+### No Issues Found (But You Expected Some)
+
+If TLC completes successfully but you expected violations:
+
+1. **Check states explored**:
    ```clojure
-   (defn should-fail [state]
-     (not= (:status state) :error))  ;; Should find error state
+   (:states-explored result)
+   ;; Too few? Your guards may be too restrictive
    ```
 
-3. **Increase max-states**: May not explore deep enough
+2. **Verify actions are enabled**: Add temporary invariant that should fail
+   ```clojure
+   (rh/definvariant should-fail-if-reachable
+     [db]
+     (not= (::status db) :error))  ;; Should find error state if reachable
+   ```
+
+3. **Check guards**: Are they preventing exploration of problem states?
+   ```clojure
+   ;; Guard may be too strict
+   (when (and (condition-1 db)
+              (condition-2 db)
+              (condition-3 db))  ;; Too many conditions?
+     ...)
+   ```
+
+4. **Expand initial state**: Try more diverse starting states
+   ```clojure
+   {::value (r/one-of #{0 1 2 3})}  ;; Instead of just #{0}
+   ```
+
+### Deadlock Detected
+
+**Error:** "Deadlock detected"
+
+**Causes:**
+- No actions are enabled
+- Processes are not marked complete with `r/done`
+
+**Solutions:**
+
+1. **Add completion marker**:
+   ```clojure
+   (r/defproc ^:fair complete
+     (fn [db]
+       (when (finished? db)
+         (r/done))))
+   ```
+
+2. **Check guard conditions**: Are they too restrictive?
+3. **Use `:no-deadlock true`** if terminal states are expected:
+   ```clojure
+   @(r/run-model initial-state components :no-deadlock true)
+   ```
+
+### Temporal Property Violations
+
+**Error:** "Temporal property violation: ..."
+
+**Common causes:**
+- Missing `^:fair` metadata on actions
+- Property is not achievable
+- Infinite loop avoids desired state
+
+**Solutions:**
+
+1. **Add fairness**:
+   ```clojure
+   (r/defproc ^:fair action-that-makes-progress
+     (fn [db] ...))
+   ```
+
+2. **Check property is achievable**: Can the system actually reach the desired state?
+3. **Review action logic**: Does progress action actually advance the system?
+
+For detailed debugging guidance, see [`references/tlc-integration.md`](references/tlc-integration.md)
 
 ## Next Steps
 

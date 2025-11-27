@@ -6,6 +6,15 @@ description: Use when creating or updating the architecture model. Creates/maint
 
 Use this skill when creating or updating the architecture model in Overarch EDN format.
 
+## Quick Reference
+
+This skill provides workflow guidance for Overarch modeling. For detailed technical references:
+
+- **`references/model-elements.md`** - Complete catalog of all element types (person, system, container, component, node, etc.) with properties and examples
+- **`references/relationships.md`** - All relationship types (request, publish, subscribe, dataflow, etc.) with usage patterns
+- **`references/views.md`** - View types, selection criteria, layout options, and rendering configuration
+- **`references/cli-usage.md`** - CLI commands, options, workflows, and integration patterns
+
 ## Prerequisites Check
 
 Before proceeding, verify Overarch CLI is installed:
@@ -128,31 +137,29 @@ The Overarch EDN format follows this structure:
 
 ### 3. Element Types Reference
 
-**Structural Elements:**
-- `:system` - Software system
-- `:container` - Deployable/executable unit (app, service, database)
-- `:component` - Grouping of related functionality
-- `:person` - Human user or actor
-- `:enterprise-boundary` - Organizational boundary
-- `:context-boundary` - System boundary
+**Core C4 Elements:**
+- `:person` - Human actors/users
+- `:system` - Software system boundary
+- `:container` - Deployable unit (app, service, database)
+- `:component` - Grouping of related functionality within a container
+- `:node` - Infrastructure/deployment element
 
-**Technical Elements:**
-- `:database` - Data store
-- `:queue` - Message queue
-- `:cache` - Caching layer
+**Container Subtypes:**
+- `:database` - Data store (use with `:subtype :database`)
+- `:queue` - Message queue/stream (use with `:subtype :queue`)
 
-**Relationships:**
-- `:rel` - General relationship
-- `:request` - Synchronous request
-- `:response` - Response to request
-- `:publish` - Async message publish
-- `:subscribe` - Async message subscription
-- `:dataflow` - Data flow
+**Common Relationship Types:**
+- `:request` - Synchronous call
+- `:send` - Asynchronous message
+- `:publish` - Event/message broadcast
+- `:subscribe` - Event/message subscription
+- `:dataflow` - Data transfer
+- `:rel` - Generic relationship
 
-**Security Elements:**
-- `:trust-boundary` - Security/trust boundary
-- `:threat` - Security threat
-- `:control` - Security control
+**For comprehensive reference on all element types, properties, and usage:**
+- See `references/model-elements.md` - Complete element type catalog
+- See `references/relationships.md` - All relationship types and patterns
+- See `references/views.md` - View types and configuration
 
 ### 4. Common Patterns
 
@@ -197,7 +204,28 @@ The Overarch EDN format follows this structure:
  :contains [:web-app :api-gateway]}
 ```
 
-### 5. Starter Template
+### 5. View Types
+
+**C4 Architecture Views:**
+- `:context-view` - System in its environment
+- `:container-view` - Containers within a system
+- `:component-view` - Components within a container
+- `:deployment-view` - Infrastructure deployment
+- `:system-landscape-view` - Multiple systems overview
+
+**UML Views:**
+- `:use-case-view` - Use case diagrams
+- `:state-machine-view` - State machines
+- `:code-view` - Class diagrams
+
+**Documentation Views:**
+- `:concept-view` - Concept maps (GraphViz)
+- `:glossary` - Element listing (Markdown)
+
+**For detailed view configuration, selection criteria, and layout options:**
+- See `references/views.md` - Complete view reference
+
+### 6. Starter Template
 
 When creating a new model, use this starter template:
 
@@ -306,8 +334,11 @@ Verify:
 Test model can be processed:
 
 ```bash
-overarch -m vault/architecture/model.edn -r export -f json
+overarch -m vault/architecture/ -x json
 ```
+
+**For comprehensive CLI usage, options, and workflows:**
+- See `references/cli-usage.md` - Complete CLI reference
 
 ## Educational Guidance
 
@@ -317,30 +348,47 @@ overarch -m vault/architecture/model.edn -r export -f json
 - Shows the system in its environment
 - Includes users and external systems
 - Highest level of abstraction
+- Use `:context-view`
 
 **Level 2 - Container:**
 - Shows major containers (apps, services, databases)
 - Each container is separately deployable/executable
 - Shows technology choices
+- Use `:container-view`
 
 **Level 3 - Component:**
 - Shows components within a container
 - Groups of related functionality
 - Internal structure
+- Use `:component-view`
 
 **Level 4 - Code:**
 - UML class diagrams, ER diagrams
-- Usually not maintained in Overarch
+- Use `:code-view` for class structures
+- Optional: Usually maintained in code
 
 ### Best Practices
 
 1. **Start Simple**: Begin with context diagram, add detail incrementally
-2. **Consistent Naming**: Use kebab-case for IDs, Title Case for names
-3. **Meaningful Relationships**: Name relationships clearly ("Uses", "Calls", "Reads from")
-4. **Technology Tags**: Always specify technology stack
-5. **Documentation**: Add `:desc` to explain purpose and responsibilities
-6. **Boundaries**: Use trust boundaries to show security zones
-7. **Data Flow**: Mark sensitive data flows explicitly
+2. **Consistent Naming**: Use kebab-case for IDs (`:my-system/web-app`), Title Case for names
+3. **Namespacing**: Organize IDs hierarchically (`:system/container/component`)
+4. **Meaningful Relationships**: Name relationships clearly ("Uses", "Calls", "Reads from")
+5. **Technology Tags**: Always specify technology stack in `:tech` vector
+6. **Documentation Layers**: Use `:desc` for diagrams, `:doc` for extended documentation
+7. **External Marking**: Mark external systems with `:external true`
+8. **Subtypes**: Use `:subtype :database` or `:subtype :queue` for specialized containers
+9. **View Selection**: Use selection criteria and tags to create focused views
+10. **File Organization**: Split large models across multiple EDN files
+
+### Common Element Properties
+
+All elements should include:
+- `:el` - Element type (required)
+- `:id` - Namespaced keyword (required)
+- `:name` - Display name (required)
+- `:desc` - Brief description for diagrams (recommended)
+- `:tech` - Technology stack as vector (recommended)
+- `:tags` - Tags for filtering (optional)
 
 ## Warning System
 
@@ -369,7 +417,8 @@ This skill integrates with:
  :id :new-system
  :name "New System"
  :desc "Description"
- :tech ["Tech Stack"]}
+ :tech ["Tech Stack"]
+ :external false}  ; Mark as external if not owned by your team
 ```
 
 ### Add New Container
@@ -380,14 +429,25 @@ This skill integrates with:
  :name "New Service"
  :desc "Service description"
  :tech ["Language" "Framework"]
- :ct "Service"
- :external false}
+ :subtype :database}  ; Optional: :database or :queue for specialized containers
+```
+
+### Add New Component
+
+```clojure
+{:el :component
+ :id :new-component
+ :name "New Component"
+ :desc "Component description"
+ :tech ["Technology"]
+ :tags #{:security}}  ; Optional: tags for filtering
 ```
 
 ### Add Relationship
 
+**Synchronous:**
 ```clojure
-{:el :rel
+{:el :request
  :id :service-a-to-b
  :from :service-a
  :to :service-b
@@ -396,26 +456,52 @@ This skill integrates with:
  :desc "Real-time data synchronization"}
 ```
 
-### Define Trust Boundary
-
+**Asynchronous:**
 ```clojure
-{:el :trust-boundary
- :id :secure-zone
- :name "Secure Zone"
- :desc "High security internal network"
- :contains [:sensitive-service :secure-db]}
+{:el :publish
+ :id :service-publishes
+ :from :order-service
+ :to :event-bus
+ :name "Publishes order events"
+ :tech ["Kafka" "Avro"]}
 ```
 
-### Add Data Asset
+### Add Infrastructure Node
 
 ```clojure
-{:el :data-asset
- :id :customer-data
- :name "Customer Data"
- :classification "PII"
- :sensitivity "high"
- :stored-in [:main-db :backup-db]}
+{:el :node
+ :id :prod-cluster
+ :name "Production Cluster"
+ :desc "Kubernetes production environment"
+ :tech ["Kubernetes" "1.27"]}
 ```
+
+### Create View
+
+**Context View:**
+```clojure
+{:el :context-view
+ :id :system-context
+ :title "System Context"
+ :spec {:include [:end-user :main-system :external-api]
+        :include [:relations]
+        :layout :top-down}}
+```
+
+**Container View with Selection:**
+```clojure
+{:el :container-view
+ :id :container-view
+ :title "Container View"
+ :spec {:selection {:namespace :my-system}
+        :include [:relations :related]
+        :layout :top-down}}
+```
+
+**For more examples and advanced patterns, see:**
+- `references/model-elements.md` - All element types and usage
+- `references/relationships.md` - Relationship patterns
+- `references/views.md` - View configuration and selection
 
 ## Output
 

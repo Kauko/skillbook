@@ -6,9 +6,19 @@ description: Use when validating infrastructure configs against security policie
 
 ## Overview
 
-Conjtest is a Clojure wrapper for Conftest (OPA policy testing tool), enabling seamless integration of security policy validation into Clojure/Clojurescript projects.
+Conjtest is a Clojure wrapper for Conftest (OPA policy testing tool), enabling seamless integration of security policy validation into Clojure/Clojurescript projects. It allows you to write infrastructure policies as Clojure functions or malli schemas, testing configuration files against security requirements before deployment.
 
-Reference: https://github.com/ilmoraunio/conjtest
+**Key Capabilities:**
+- Define policies as pure Clojure functions or declarative schemas
+- Validate 17+ configuration formats (YAML, JSON, HCL, Dockerfile, etc.)
+- Integrate with clojure.test for policy-as-code testing
+- Generate compliance reports with severity classification
+
+**References:**
+- Conjtest Repository: https://github.com/ilmoraunio/conjtest
+- Conftest (underlying tool): https://www.conftest.dev
+- Detailed API Documentation: [references/api.md](./conjtest-testing/references/api.md)
+- CI/CD Integration Guide: [references/integration.md](./conjtest-testing/references/integration.md)
 
 ## Prerequisites Check
 
@@ -59,7 +69,7 @@ Verify Conjtest is available in project dependencies:
 
 ### Policy Directory Configuration
 
-Set up Conjtest to use policies from `infrastructure/policies/`:
+Set up Conjtest to use policies from `infrastructure/policies/`. See [integration guide](./conjtest-testing/references/integration.md) for advanced configuration options including CI/CD, Git hooks, and container deployments.
 
 Create or update `conftest.toml` in project root:
 
@@ -87,7 +97,7 @@ trace = false
 
 ### Conjtest Test Configuration
 
-Create test namespace: `test/security/policy_test.clj`:
+Create test namespace: `test/security/policy_test.clj`. See [API reference](./conjtest-testing/references/api.md) for complete function signatures, return values, and advanced usage patterns:
 
 ```clojure
 (ns security.policy-test
@@ -534,6 +544,8 @@ Create reporting namespace: `src/security/compliance_report.clj`:
 
 ## Integration with CI/CD
 
+This section provides a basic GitHub Actions example. For comprehensive integration guides including GitLab CI, CircleCI, Jenkins, Git hooks, Docker, Kubernetes admission controllers, and IDE integration, see the [integration guide](./conjtest-testing/references/integration.md).
+
 ### GitHub Actions
 
 Create `.github/workflows/security-compliance.yml`:
@@ -633,6 +645,10 @@ The generated `vault/security/policy-compliance.md` provides:
 - Block deployments that violate critical policies
 - Use warnings for medium/low severity violations
 - Provide clear remediation guidance in violation messages
+
+**See Also:**
+- [API Reference](./conjtest-testing/references/api.md) - Policy writing patterns, error handling, performance optimization
+- [Integration Guide](./conjtest-testing/references/integration.md) - CI/CD pipelines, Git hooks, monitoring, alerting
 
 ## Troubleshooting
 

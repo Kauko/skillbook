@@ -2,6 +2,13 @@
 
 Use when setting up or running cljfmt for Clojure code formatting. cljfmt automatically formats Clojure code according to community standards and customizable rules.
 
+## Quick Reference
+
+For detailed documentation:
+- **Configuration options:** See `references/configuration.md` for all .cljfmt.edn options
+- **Indentation rules:** See `references/indentation.md` for custom indentation patterns
+- **Official repository:** https://github.com/weavejester/cljfmt
+
 ## Installation Check
 
 Before proceeding, verify if cljfmt is installed:
@@ -12,22 +19,26 @@ clojure -Ttools list
 
 Look for `cljfmt` in the tool list. If not present, install it:
 
-**Install as Clojure CLI tool:**
+**Install as Clojure CLI tool (recommended):**
 ```bash
-clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag "0.12.0"}' :as cljfmt
-```
-
-**Alternative: Via deps.edn alias:**
-Add to project `deps.edn`:
-```clojure
-{:aliases
- {:cljfmt {:extra-deps {cljfmt/cljfmt {:mvn/version "0.12.0"}}
-           :main-opts ["-m" "cljfmt.main"]}}}
+clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag "0.15.6"}' :as cljfmt
 ```
 
 **Verify installation:**
 ```bash
 clojure -Tcljfmt help
+```
+
+**Alternative: Standalone binary**
+For Linux/macOS:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/weavejester/cljfmt/HEAD/install.sh)"
+```
+
+**Alternative: Leiningen plugin**
+Add to `project.clj`:
+```clojure
+:plugins [[dev.weavejester/lein-cljfmt "0.15.6"]]
 ```
 
 ## Configuration Setup
@@ -119,30 +130,39 @@ Create a configuration file aligned with Clojure Style Guide:
  :paths ["src" "test" "dev"]}
 ```
 
-**Configuration Options:**
+**Key Configuration Options:**
 
-- `:indents` - Custom indentation rules for macros
+- `:extra-indents` - Add custom indentation rules (recommended, preserves defaults)
+- `:indents` - Replace ALL default indentation rules (use with caution)
 - `:indentation?` - Enable smart indentation (default: true)
 - `:remove-surrounding-whitespace?` - Clean up extra spaces (default: true)
 - `:remove-trailing-whitespace?` - Remove line-ending spaces (default: true)
 - `:insert-missing-whitespace?` - Add required spaces (default: true)
 - `:remove-consecutive-blank-lines?` - Limit blank lines (default: true)
 - `:max-consecutive-blank-lines` - Maximum blank lines allowed (default: 2)
-- `:paths` - Directories to format
+- `:paths` - Directories to format (default: ["src" "test"])
+- `:parallel?` - Process files concurrently for better performance
+- `:function-arguments-indentation` - Choose style: `:community`, `:cursive`, or `:zprint`
+
+See `references/configuration.md` for complete list of all options.
 
 ### 2. Understanding Indent Rules
 
-cljfmt uses indent patterns to format macro calls correctly:
+cljfmt uses indent patterns to format macro calls correctly. Three main rule types:
 
-**`:inner N`** - Indent body relative to the symbol at position N:
+**`:inner` - Consistent two-space indentation:**
 ```clojure
+{:extra-indents {defn [[:inner 0]]}}
+
 (defn my-function
   [args]
   body)
 ```
 
-**`:block N`** - Indent as a block after N arguments:
+**`:block` - Block-style indentation:**
 ```clojure
+{:extra-indents {when [[:block 1]]}}
+
 (when condition
   first-expr
   second-expr)
@@ -150,9 +170,11 @@ cljfmt uses indent patterns to format macro calls correctly:
 
 **Regex patterns** - Match multiple macros:
 ```clojure
-#"^def.*" [[:inner 0]]  ; Matches defn, defmacro, defprotocol, etc.
-#"^with-.*" [[:inner 1]] ; Matches with-open, with-redefs, etc.
+{:extra-indents {#"^def.*" [[:inner 0]]    ; defn, defmacro, etc.
+                 #"^with-.*" [[:inner 1]]}} ; with-open, with-redefs, etc.
 ```
+
+See `references/indentation.md` for comprehensive guide to all indentation rule types, pattern matching, and advanced techniques.
 
 ## Formatting Scripts
 
@@ -168,7 +190,7 @@ echo "Checking code formatting with cljfmt..."
 
 if ! clojure -Tcljfmt help &> /dev/null; then
     echo "Error: cljfmt is not installed"
-    echo "Install via: clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag \"0.12.0\"}' :as cljfmt"
+    echo "Install via: clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag \"0.15.6\"}' :as cljfmt"
     exit 1
 fi
 
@@ -190,7 +212,7 @@ echo "Formatting code with cljfmt..."
 
 if ! clojure -Tcljfmt help &> /dev/null; then
     echo "Error: cljfmt is not installed"
-    echo "Install via: clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag \"0.12.0\"}' :as cljfmt"
+    echo "Install via: clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag \"0.15.6\"}' :as cljfmt"
     exit 1
 fi
 
@@ -365,7 +387,7 @@ Add to your CI pipeline:
 ```yaml
 # .github/workflows/format.yml
 - name: Install cljfmt
-  run: clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag "0.12.0"}' :as cljfmt
+  run: clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag "0.15.6"}' :as cljfmt
 
 - name: Check formatting
   run: ./scripts/fmt-check.sh
@@ -376,7 +398,7 @@ Add to your CI pipeline:
 format:
   stage: test
   script:
-    - clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag "0.12.0"}' :as cljfmt
+    - clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag "0.15.6"}' :as cljfmt
     - ./scripts/fmt-check.sh
 ```
 
@@ -418,12 +440,15 @@ Cursive uses its own formatter. To use cljfmt:
 
 ### Project-Specific Indents
 
-Add custom indents for project macros:
+Add custom indents for project macros using `:extra-indents`:
 
 ```clojure
-{:indents {myapp.macros/with-context [[:inner 1]]
-           myapp.routes/defapi [[:block 0]]}}
+{:extra-indents {myapp.macros/with-context [[:inner 1]]
+                 myapp.routes/defapi [[:block 0]]
+                 #"^def.*" [[:inner 0]]}}
 ```
+
+Note: Use `:extra-indents` to preserve default rules. Using `:indents` replaces ALL defaults.
 
 ### Namespace Aliases
 
@@ -431,16 +456,18 @@ Specify namespace aliases for proper indentation:
 
 ```clojure
 {:alias-map {test clojure.test
-             async clojure.core.async}}
+             async clojure.core.async
+             s schema.core}}
 ```
 
-### Exclude Paths
+### Performance and Paths
 
-Exclude directories from formatting:
+Configure paths and enable parallel processing:
 
 ```clojure
-{:paths ["src" "test"]
- :exclude-paths ["src/generated"]}
+{:paths ["src" "test" "dev"]
+ :exclude-paths ["src/generated"]
+ :parallel? true}
 ```
 
 ### File Extensions
@@ -450,6 +477,8 @@ Format non-standard extensions:
 ```clojure
 {:file-pattern #"\.clj[scx]?$"}
 ```
+
+For complete configuration reference, see `references/configuration.md` and `references/indentation.md`.
 
 ## Best Practices
 
@@ -463,24 +492,37 @@ Format non-standard extensions:
 ## Troubleshooting
 
 **Incorrect indentation for custom macros:**
-- Add indent rules to `:indents` in `.cljfmt.edn`
-- Use regex patterns for multiple similar macros
+- Add indent rules to `:extra-indents` in `.cljfmt.edn` (not `:indents`)
+- Use regex patterns for multiple similar macros: `#"^with-.*" [[:inner 1]]`
+- Check namespace qualification and `:alias-map` configuration
+- See `references/indentation.md` for detailed guidance
+
+**Lost default indentation rules:**
+- You likely used `:indents` instead of `:extra-indents`
+- Change to `:extra-indents` to preserve defaults
+- Or add `:legacy/merge-indents? true` for backward compatibility
 
 **Formatting conflicts with other tools:**
 - Ensure all team members use same `.cljfmt.edn`
 - Disable conflicting editor formatters
+- Commit `.cljfmt.edn` to version control
 
 **Performance issues on large projects:**
+- Enable `:parallel? true` for concurrent processing
 - Limit `:paths` to necessary directories
 - Use `:exclude-paths` for generated code
 
 **Tool not found:**
 - Verify installation: `clojure -Ttools list`
-- Re-install: `clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag "0.12.0"}' :as cljfmt`
+- Re-install: `clojure -Ttools install io.github.weavejester/cljfmt '{:git/tag "0.15.6"}' :as cljfmt`
 
 ## Resources
 
+### Local Documentation
+- **Configuration Reference:** `references/configuration.md` - Complete guide to all .cljfmt.edn options
+- **Indentation Reference:** `references/indentation.md` - Comprehensive guide to custom indentation rules
+
+### External Resources
 - **cljfmt GitHub:** https://github.com/weavejester/cljfmt
 - **Clojure Style Guide:** https://guide.clojure.style
-- **Indentation Guide:** https://github.com/weavejester/cljfmt#indentation-rules
 - **Clojure CLI Tools:** https://clojure.org/reference/deps_and_cli

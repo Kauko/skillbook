@@ -89,19 +89,81 @@ Then: `bundle install`
 Create `.git-lint.yml` in repository root:
 
 ```yaml
+# Two-tier validation: humans free, agents validated
 commits:
-  enabled: true
-  subject_length: 72
-  subject_prefix: "\\A🤖 "  # Require 🤖 prefix for agent commits
-  subject_capitalized: true
+  author:
+    capitalization:
+      enabled: true
+      severity: error
+    email:
+      enabled: true
+      severity: error
+    name:
+      enabled: true
+      severity: error
+      minimum: 2
+
+  body:
+    bullet_capitalization:
+      enabled: true
+      severity: error
+    leading_line:
+      enabled: true
+      severity: error
+    line_length:
+      enabled: false  # Allow URLs and code snippets
+    paragraph_capitalization:
+      enabled: true
+      severity: error
+    phrase:
+      enabled: true
+      severity: warn
+      excludes:
+        - "absolutely"
+        - "actually"
+        - "basically"
+        - "easy"
+        - "just"
+        - "obvious"
+        - "obviously"
+        - "of course"
+        - "simply"
+    presence:
+      enabled: true
+      severity: warn
+      minimum: 1
+    word_repeat:
+      enabled: true
+      severity: error
+
+  subject:
+    length:
+      enabled: true
+      severity: error
+      maximum: 72
+    prefix:
+      enabled: false  # Disabled for gitmoji workflow
+    suffix:
+      enabled: true
+      severity: error
+      excludes: ["!", ".", "?"]
+    word_repeat:
+      enabled: true
+      severity: error
+
+  signature:
+    enabled: false
 
 branches:
   enabled: true
   name: "\\A[a-z]+[a-z0-9-]*\\Z"
 
 issues:
-  enabled: false  # Customize per project needs
+  enabled: false
 ```
+
+For complete configuration options, see [references/configuration.md](./references/configuration.md).
+For all analyzers and customization, see [references/analyzers.md](./references/analyzers.md).
 
 ### 3. Install Custom commit-msg Hook
 
@@ -264,9 +326,16 @@ When using Milestoner for releases, it can parse these structured commits to gen
 - Check font includes emoji support
 - Test with: `echo "🤖 ✨ 🐛"`
 
-## References
+## Detailed References
 
-- [git-lint Documentation](https://alchemists.io/projects/git-lint)
-- [gitmoji Guide](https://gitmoji.dev)
-- [GitHub Emoji Cheat Sheet](https://github.com/ikatyang/emoji-cheat-sheet)
-- [Conventional Commits](https://www.conventionalcommits.org)
+For comprehensive documentation on git-lint:
+
+- [Configuration Reference](./references/configuration.md) - Complete guide to all `.git-lint.yml` options with examples
+- [Analyzers Reference](./references/analyzers.md) - All 40+ built-in analyzers, their purposes, and customization guidance
+
+## External Resources
+
+- [git-lint Documentation](https://alchemists.io/projects/git-lint) - Official git-lint documentation
+- [gitmoji Guide](https://gitmoji.dev) - Complete gitmoji reference with visual examples
+- [GitHub Emoji Cheat Sheet](https://github.com/ikatyang/emoji-cheat-sheet) - Searchable emoji reference
+- [Conventional Commits](https://www.conventionalcommits.org) - Alternative commit convention standard

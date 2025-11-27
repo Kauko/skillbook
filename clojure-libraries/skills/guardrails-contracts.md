@@ -2,6 +2,13 @@
 
 Use when adding runtime contracts to Clojure functions. Uses Guardrails with Malli schemas and guardrails-analyzer for static checking at compile time.
 
+## Reference Documentation
+
+Comprehensive details available in:
+- `references/syntax.md` - Complete >defn, >def, >fdef syntax, gspec format, Malli integration
+- `references/configuration.md` - All configuration options for dev/staging/production environments
+- `references/analyzer.md` - Static analysis setup, IDE integration, CI/CD configuration
+
 ## When to Use This Skill
 
 - Adding runtime validation to function inputs and outputs
@@ -38,23 +45,18 @@ Add to `deps.edn`:
 
 ### Configuration Setup
 
-Create `resources/config.edn` or update existing config:
+**See `references/configuration.md` for all configuration options, performance tuning, and production setup.**
+
+Quick configuration in `guardrails.edn`:
 
 ```clojure
-{:guardrails
- {:env :dev  ; :dev, :staging, or :production
-
-  ;; Development configuration
-  :dev {:enabled true
-        :throw-on-error true
-        :log-violations true}
-
-  ;; Production configuration
-  :production {:enabled false
-               :compile-out true}}}
+{:throw? true
+ :guardrails/mcps 100              ; Max checks per second (performance throttling)
+ :guardrails/stack-trace :prune
+ :guardrails/trace? true}
 ```
 
-### Environment-Based Configuration
+Environment-based setup:
 
 ```clojure
 (ns myapp.config
@@ -69,6 +71,8 @@ Create `resources/config.edn` or update existing config:
 ```
 
 ## Basic Guardrails Usage
+
+**See `references/syntax.md` for complete syntax details, including gspec format, such-that predicates, and advanced patterns.**
 
 ### Simple Function Contracts
 
@@ -341,52 +345,33 @@ Create schemas once, use everywhere:
 
 ## Static Analysis with guardrails-analyzer
 
-### Setup guardrails-analyzer
+**See `references/analyzer.md` for complete setup instructions, IDE integration, and CI/CD configuration.**
+
+### Quick Start
 
 Add to `deps.edn`:
 
 ```clojure
 {:aliases
- {:analyze {:extra-deps {io.github.nubank/guardrails-analyzer
-                         {:git/sha "01234abcdef"
-                          :git/url "https://github.com/nubank/guardrails-analyzer"}}
-            :main-opts ["-m" "guardrails-analyzer.core"]}}}
+ {:analyze {:extra-deps {io.github.fulcrologic/guardrails-analyzer
+                         {:git/url "https://github.com/fulcrologic/guardrails-analyzer"
+                          :git/sha "latest-sha"}}
+            :main-opts ["-m" "com.fulcrologic.guardrails-analyzer.core"]}}}
 ```
 
-### Run Static Analysis
+Run analysis:
 
 ```bash
 # Analyze all source files
-clojure -M:analyze src/
-
-# Analyze specific namespace
-clojure -M:analyze src/myapp/domain/users.clj
-
-# Fail build on violations
-clojure -M:analyze --fail-on-error src/
+clojure -J-Dguardrails.mode=:pro -M:analyze --fail-on-error
 ```
 
-### Configuration
-
-Create `.guardrails-analyzer.edn`:
-
-```clojure
-{:paths ["src"]
- :exclude ["src/myapp/generated"]
- :fail-on-error true
- :checks {:arity true
-          :schema-validation true
-          :return-type true}}
-```
-
-### CI/CD Integration
-
-Add to your CI pipeline:
+CI/CD integration:
 
 ```yaml
 # .github/workflows/ci.yml
 - name: Run Guardrails Static Analysis
-  run: clojure -M:analyze --fail-on-error src/
+  run: clojure -J-Dguardrails.mode=:pro -M:analyze --fail-on-error
 ```
 
 ## clj-kondo Integration
@@ -609,43 +594,32 @@ Avoid contracts in hot paths even during development:
 
 ## Production Configuration
 
+**See `references/configuration.md` for complete production setup, dead code elimination, and performance tuning.**
+
 ### Compile Out Contracts
 
-Configure shadow-cljs or ClojureScript build:
+ClojureScript (shadow-cljs):
 
 ```clojure
 ;; shadow-cljs.edn
 {:builds
  {:app
-  {:target :browser
-   :closure-defines {guardrails.config/ENABLED false}}}}
+  {:release
+   {:compiler-options
+    {:closure-defines {guardrails.config/ENABLED false}}}}}}
 ```
 
-For Clojure:
+Clojure:
 
-```clojure
-;; profiles.clj
-{:prod {:jvm-opts ["-Dguardrails.enabled=false"]}}
-```
+```bash
+# Via JVM opts
+clojure -J-Dguardrails.enabled=false -M:prod
 
-### Environment Detection
-
-```clojure
-(ns myapp.config)
-
-(def contracts-enabled?
-  (if (= (System/getenv "APP_ENV") "production")
-    false
-    true))
-
-;; Or read from config file
-(def config (read-config "config.edn"))
-(def contracts-enabled? (get-in config [:guardrails :enabled]))
+# Or in deps.edn
+{:aliases {:prod {:jvm-opts ["-Dguardrails.enabled=false"]}}}
 ```
 
 ### Verification
-
-Verify contracts are disabled in production:
 
 ```clojure
 (ns myapp.health
@@ -889,7 +863,14 @@ Verify contracts are disabled in production:
 
 ## References
 
+### Local Documentation
+- `references/syntax.md` - Complete syntax guide (gspec, >defn, >def, >fdef, Malli schemas)
+- `references/configuration.md` - All config options (dev/staging/prod, performance tuning)
+- `references/analyzer.md` - Static analysis setup (IDE integration, CI/CD, daemon setup)
+
+### External Resources
 - Guardrails: https://github.com/fulcrologic/guardrails
-- guardrails-analyzer: https://github.com/nubank/guardrails-analyzer
-- Malli integration: See `malli-schemas.md`
+- Guardrails Analyzer: https://github.com/fulcrologic/guardrails-analyzer
+- Guardrails IntelliJ Plugin: https://github.com/fulcrologic/guardrails-intellij-plugin
+- Malli: https://github.com/metosin/malli
 - clj-kondo hooks: https://github.com/clj-kondo/clj-kondo/tree/master/doc/hooks.md

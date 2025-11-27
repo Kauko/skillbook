@@ -6,6 +6,16 @@ description: Use when generating C4 architecture diagrams from the Overarch mode
 
 Use this skill when generating C4 architecture diagrams from the Overarch EDN model.
 
+## Reference Documentation
+
+Comprehensive Structurizr DSL documentation is available in the `references/` directory:
+
+- **[Language Reference](references/language.md)** - Complete DSL syntax, elements, relationships, and properties
+- **[Views Reference](references/views.md)** - All view types (context, container, component, dynamic, deployment, etc.)
+- **[Styling Reference](references/styling.md)** - Themes, colors, shapes, element/relationship styles, and branding
+
+Consult these references for detailed syntax, advanced features, and examples.
+
 ## Prerequisites Check
 
 Before proceeding, verify Structurizr CLI is installed:
@@ -299,7 +309,7 @@ fi
 
 ### Custom Styles
 
-Add custom styling to DSL:
+Add custom styling to DSL using element and relationship styles:
 
 ```dsl
 styles {
@@ -307,6 +317,7 @@ styles {
         shape person
         background #08427B
         color #ffffff
+        fontSize 22
     }
     element "Microservice" {
         background #91C4F2
@@ -316,76 +327,105 @@ styles {
     element "External" {
         background #999999
         color #ffffff
-        opacity 50
+        opacity 70
+        border dashed
     }
     element "Critical" {
         stroke #ff0000
-        strokeWidth 3
+        strokeWidth 4
     }
-    relationship "Async" {
+    element "Database" {
+        shape cylinder
+        background #438DD5
+        color #ffffff
+    }
+
+    relationship "Synchronous" {
+        style solid
+        thickness 2
+        color #000000
+    }
+    relationship "Asynchronous" {
         style dashed
+        thickness 2
         color #666666
     }
 }
 ```
 
+**See:** [Styling Reference](references/styling.md) for complete styling guide including shapes, colors, themes, and branding.
+
 ### Layout Control
 
-Control diagram layout:
+Control diagram layout with auto-layout directions and spacing:
 
 ```dsl
 systemContext app "SystemContext" {
     include *
-    autoLayout tb  # top-to-bottom (or lr, rl, bt)
+    autoLayout tb  # top-to-bottom
 }
 
-# Or manual positioning
-systemContext app "SystemContext" {
+container app "Containers" {
     include *
-    # Disable autoLayout for manual control
+    autoLayout lr 150 150  # left-to-right with custom spacing
 }
+
+# Available directions: tb (top-bottom), bt (bottom-top), lr (left-right), rl (right-left)
 ```
+
+**See:** [Views Reference](references/views.md#autolayout) for layout options.
 
 ### Multiple Views
 
-Generate multiple perspectives:
+Generate multiple perspectives for different audiences:
 
 ```dsl
 views {
-    # Full system context
-    systemContext mainSystem "FullContext" {
+    # High-level context
+    systemContext mainSystem "FullContext" "Complete system context" {
         include *
         autoLayout
     }
 
-    # Focused container view
-    container mainSystem "BackendView" {
-        include backend database cache
+    # All containers
+    container mainSystem "AllContainers" {
+        include *
+        autoLayout tb
+    }
+
+    # Backend-focused view
+    container mainSystem "BackendView" "Backend services" {
+        include api database cache messageQueue
         autoLayout lr
+        title "Backend Architecture"
     }
 
     # Deployment view
-    deployment mainSystem "Production" "ProductionDeployment" {
+    deployment mainSystem "Production" "ProductionDeployment" "Production infrastructure" {
         include *
-        autoLayout
+        autoLayout tb
     }
 }
 ```
 
+**See:** [Views Reference](references/views.md) for all view types and options.
+
 ## Advanced Features
+
+For detailed documentation on all features, see the [Reference Documentation](#reference-documentation) above.
 
 ### Deployment Diagrams
 
-Add deployment information:
+Add deployment information to show infrastructure topology:
 
 ```dsl
 model {
     production = deploymentEnvironment "Production" {
         deploymentNode "AWS" {
-            deploymentNode "ECS Cluster" {
+            deploymentNode "ECS Cluster" "Container orchestration" "AWS ECS" {
                 containerInstance backend
             }
-            deploymentNode "RDS" {
+            deploymentNode "RDS" "Database hosting" "AWS RDS" {
                 containerInstance database
             }
         }
@@ -393,39 +433,46 @@ model {
 }
 
 views {
-    deployment * "Production" "Deployment" {
+    deployment mainSystem "Production" "ProductionDeployment" {
         include *
-        autoLayout
+        autoLayout tb
+        title "Production Infrastructure"
     }
 }
 ```
 
+**See:** [Views Reference](references/views.md#deployment-view) for complete deployment view syntax.
+
 ### Dynamic Diagrams
 
-Show interaction flows:
+Show interaction flows and sequences:
 
 ```dsl
 views {
     dynamic mainSystem "UserLogin" "User login flow" {
-        user -> frontend "1. Enters credentials"
-        frontend -> backend "2. POST /auth/login"
-        backend -> database "3. Verify credentials"
-        database -> backend "4. Return user data"
-        backend -> frontend "5. Return JWT token"
-        frontend -> user "6. Display dashboard"
-        autoLayout
+        user -> webapp "1. Enters credentials"
+        webapp -> api "2. POST /auth/login"
+        api -> database "3. Verify credentials"
+        database -> api "4. Return user data"
+        api -> cache "5. Store session"
+        api -> webapp "6. Return JWT token"
+        webapp -> user "7. Display dashboard"
+        autoLayout lr
+        title "Authentication Flow"
     }
 }
 ```
 
+**See:** [Views Reference](references/views.md#dynamic-view) for dynamic view details.
+
 ### Tags and Filtering
 
-Use tags to filter views:
+Use tags to organize elements and create filtered views:
 
 ```dsl
 model {
     backend = container "Backend" "API" "Node.js" {
-        tags "Critical" "Internal"
+        tags "Critical" "Internal" "Backend"
     }
 
     external = softwareSystem "External API" "Third party" {
@@ -434,12 +481,21 @@ model {
 }
 
 views {
-    container mainSystem "InternalOnly" {
-        include element.tag==Internal
+    # Base view with all containers
+    container mainSystem "AllContainers" {
+        include *
         autoLayout
     }
+
+    # Filtered view showing only internal components
+    filtered "AllContainers" include "Internal" "InternalOnly" "Internal systems only"
+
+    # Filtered view excluding external systems
+    filtered "AllContainers" exclude "External" "NoExternal" "Without external dependencies"
 }
 ```
+
+**See:** [Views Reference](references/views.md#filtered-view) for filtering expressions and patterns.
 
 ## Output Formats
 
@@ -542,6 +598,8 @@ echo "Done! Diagrams regenerated."
 6. **Tags**: Use tags to organize and filter complex models
 7. **Documentation**: Always generate `diagrams.md` with timestamps
 8. **Validation**: Validate DSL before generating diagrams
+9. **Explicit Keys**: Always specify view keys explicitly (not auto-generated)
+10. **Consult References**: Use the detailed [reference documentation](#reference-documentation) for advanced features
 
 ## Output Checklist
 
@@ -579,6 +637,26 @@ After generating diagrams, confirm:
 4. Regenerate diagrams
 5. Update `diagrams.md` with new timestamp
 6. Show what changed (diff summary)
+
+---
+
+## Additional Resources
+
+This skill focuses on the workflow for generating C4 diagrams from Overarch models. For comprehensive Structurizr DSL documentation:
+
+- **[Language Reference](references/language.md)** - Complete syntax, elements, relationships, properties, and advanced features like !include, !script, and !elements
+- **[Views Reference](references/views.md)** - All view types with detailed syntax and options
+- **[Styling Reference](references/styling.md)** - Complete styling guide with shapes, colors, themes, branding, and visual design patterns
+
+These references contain:
+- Full DSL syntax specifications
+- All element and relationship properties
+- Complete view type documentation (9 types)
+- Comprehensive styling options (14 shapes, colors, themes)
+- Advanced features (!include, !script, !elements, filtering expressions)
+- Deployment and dynamic diagram patterns
+- Animation and filtering capabilities
+- Export format compatibility notes
 
 ---
 

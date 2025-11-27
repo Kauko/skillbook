@@ -4,6 +4,10 @@ Use when writing or reviewing Clojure code. This skill enforces coding conventio
 
 Apply these rules automatically when writing Clojure code. When reviewing code, cite specific rules and explain why they matter.
 
+**For detailed documentation, see:**
+- `references/stuart-sierra-rules.md` - Complete Stuart Sierra Do's and Don'ts
+- `references/style-guide.md` - Comprehensive Clojure Style Guide
+
 ## Naming Conventions
 
 ### Functions and Variables: lisp-case (kebab-case)
@@ -289,7 +293,9 @@ Apply these rules automatically when writing Clojure code. When reviewing code, 
 
 **Why:** `seq` returns nil for empty collections, enabling idiomatic nil-punning. It's also more efficient than `count`.
 
-### ALWAYS Use Fallback with `get` (Metosin Convention)
+### ALWAYS Use Fallback with `get` (Metosin Convention) ⚠️
+
+**This is a custom Metosin rule - not standard Clojure practice.**
 
 ```clojure
 ;; GOOD - explicit fallback makes nil-handling intentional
@@ -301,11 +307,13 @@ Apply these rules automatically when writing Clojure code. When reviewing code, 
 (get my-map :id)
 ```
 
-**Why:** Explicit fallback makes nil-handling intentional and aids debugging. Without fallback, you can't distinguish between "key missing" and "key present with nil value". The fallback documents expected behavior.
+**Why:** Explicit fallback makes nil-handling intentional and aids debugging. Without fallback, you can't distinguish between "key missing" and "key present with nil value". The fallback documents expected behavior and prevents subtle bugs.
 
 **Exceptions:**
 - When nil is a valid, expected value
 - In pure predicates where nil test is explicit: `(some? (get m :k))`
+
+**Alternative:** Use keyword lookup `(:id my-map)` when you're certain the key exists or nil is acceptable.
 
 ### Combine Binding with Conditionals
 
@@ -381,13 +389,16 @@ Apply these rules automatically when writing Clojure code. When reviewing code, 
 
 **Why:** `condp` eliminates repetition when testing the same value multiple times.
 
-### Avoid Lazy Side Effects (Stuart Sierra)
+### Never Mix Lazy Sequences with Side Effects (Stuart Sierra) 🔥
+
+**Priority: Critical - "probably my number one Clojure Don't"**
 
 ```clojure
 ;; BAD - side effects in lazy sequence
 (map #(println %) items)  ; Might not execute!
 (for [item items]
   (save-to-db! item))     ; Dangerous!
+(take 5 (map prn (range 10)))  ; Prints all 10 due to chunking!
 
 ;; GOOD - force realization with run!, doseq, doall
 (run! println items)
@@ -396,7 +407,17 @@ Apply these rules automatically when writing Clojure code. When reviewing code, 
 (doall (map process-and-save items))
 ```
 
-**Why:** Lazy sequences delay evaluation. Side effects in lazy sequences may never execute or execute at unexpected times. Use `run!`, `doseq`, or `doall` to force realization.
+**Why:** Lazy sequences delay evaluation unpredictably. Side effects may:
+- Never execute (if sequence never realized)
+- Execute late (cached until forced)
+- Execute in unexpected batches (chunked sequences)
+
+**Use:**
+- `doseq` - Best default for side effects
+- `run!` - Cleaner than `(dorun (map ...))`
+- `reduce`/`transduce` - For accumulation with side effects
+
+**See:** `references/stuart-sierra-rules.md` for complete explanation
 
 ### Single-Expression Functions: Use `#()` Reader Macro
 
@@ -413,38 +434,83 @@ Apply these rules automatically when writing Clojure code. When reviewing code, 
 #(do
    (println %)
    (* % 2))  ; Should use (fn [x] ...)
+
+;; BAD - numbered parameters unclear
+#(process %1 %2 %3)  ; What do these mean?
 ```
 
-**Why:** `#()` is concise for simple, single-expression functions. For multi-expression bodies, use `fn`.
+**Why:** `#()` is concise for simple, single-expression functions. For multi-expression bodies or multiple parameters, use `fn` with named parameters.
 
-### Use Polymorphism for Consistent Interfaces (Stuart Sierra)
+**Guidelines:**
+- Use `#()` for single, obvious expressions with `%`
+- Use `fn` for multiple expressions, multiple parameters, or complex logic
+
+### Don't Create Redundant Batch Functions (Stuart Sierra)
 
 ```clojure
-;; GOOD - polymorphic protocol
+;; BAD - redundant wrapper
+(defn process-thing [thing]
+  ;; process one thing
+  ...)
+
+(defn process-many-things [things]
+  (map process-thing things))
+
+;; GOOD - single-item function, callers use map
+(defn process-thing [thing]
+  ;; process one thing
+  ...)
+
+;; Callers write:
+(map process-thing things)
+
+;; EXCEPTION - genuinely more efficient batch operation
+(defn save-thing! [thing]
+  (db/insert! thing))
+
+(defn save-many-things! [things]
+  (db/batch-insert! things))  ; Actually faster
+```
+
+**Why:** "Map a function over a collection" is universal Clojure. Redundant wrappers add unnecessary API surface, extra names, and maintenance burden with no benefit.
+
+**Only create batch versions when:**
+- Batch operations are genuinely more efficient (e.g., batch database inserts)
+- There's special handling for collections (e.g., transaction boundaries)
+
+### Use Polymorphism ONLY When Substitutable (Stuart Sierra)
+
+```clojure
+;; GOOD - genuine polymorphism, caller doesn't know type
 (defprotocol Saveable
   (save [this]))
 
 (extend-protocol Saveable
   User
   (save [user] (save-user-to-db user))
-
   Order
   (save [order] (save-order-to-db order)))
 
-;; Now callers don't need to know the type
-(save entity)
+;; Caller is decoupled from types
+(defn persist-entities [entities]
+  (doseq [entity entities]
+    (save entity)))  ; Works with any Saveable
 
-;; BAD - type-specific functions force caller to know types
-(defn save-user [user] ...)
-(defn save-order [order] ...)
+;; BAD - false polymorphism, caller knows exact type
+(defn process-foo [x]
+  (blerg x)  ; x is always FooProcessor
+  (:foo-specific-field x))  ; Coupled to specific type!
 
-;; Caller must know type
-(if (user? entity)
-  (save-user entity)
-  (save-order entity))
+;; BETTER - honest, explicit coupling
+(defn blerg-foo [foo] ...)
+(defn blerg-bar [bar] ...)
+(defn process-foo [x]
+  (blerg-foo x))  ; Coupling is obvious
 ```
 
-**Why:** Polymorphism decouples callers from implementation details, making code more flexible and maintainable.
+**Why:** Use polymorphism when implementations are truly substitutable (Liskov Substitution Principle). If call sites know the concrete type, use distinct named functions to make coupling explicit.
+
+**See:** `references/stuart-sierra-rules.md` section on "Don't Use Polymorphism Where It Doesn't Exist"
 
 ## Documentation
 
@@ -692,48 +758,95 @@ Apply these rules automatically when writing Clojure code. When reviewing code, 
 
 ## Quick Reference
 
-**Do:**
+### Critical Rules (Review These First)
+
+**🔥 Never Mix Lazy Sequences with Side Effects** (Stuart Sierra's #1)
+- Use `doseq`, `run!`, `reduce` - never `map`, `for` with side effects
+- See: `references/stuart-sierra-rules.md`
+
+**⚠️ Always Use Fallback with `get`** (Metosin Custom)
+- `(get m :k ::not-found)` not `(get m :k)`
+- Makes nil-handling explicit and prevents bugs
+
+**Use `when` for Single-Branch Conditionals** (Stuart Sierra)
+- Never use single-branch `if`
+- `when` signals intent clearly
+
+**Don't Create Redundant Batch Functions** (Stuart Sierra)
+- Let callers use `map` - it's universal Clojure
+- Exception: genuinely more efficient batch operations
+
+**Use Polymorphism ONLY When Substitutable** (Stuart Sierra)
+- If caller knows the type, use explicit named functions
+- False abstraction is worse than honest coupling
+
+### Standard Rules
+
+**Naming:**
 - ✓ Use kebab-case for functions/variables
 - ✓ End predicates with `?`
 - ✓ End unsafe operations with `!`
 - ✓ Use `*earmuffs*` for dynamic vars
-- ✓ Use `when` for single-branch conditionals
+- ✓ CapitalCase for types, records, protocols
+- ✗ Never camelCase or snake_case
+- ✗ Never `is-` prefix for predicates
+
+**Idiomatic Patterns:**
 - ✓ Use `seq` to test for empty collections
-- ✓ **Always use fallback with `get`**
 - ✓ Prefer threading macros for data flow
 - ✓ Use higher-order functions over `loop/recur`
-- ✓ Force realization of lazy sequences with side effects
+- ✓ Use `#()` only for single-expression functions
+- ✗ Never `(not (empty? coll))` - use `seq`
+- ✗ Never `#()` for multi-expression or multi-parameter functions
+
+**Organization:**
+- ✓ Multi-segment namespace names
+- ✓ One namespace per file
+- ✓ Single blank line between top-level forms
+- ✗ Never single-segment namespaces
+
+**Documentation:**
 - ✓ Write docstrings for public functions
-- ✓ Use polymorphism for consistent interfaces
+- ✓ Prioritize self-explanatory code
+- ✓ Use comment hierarchy: `;;;;` `;;;` `;;` `;`
 
-**Don't:**
-- ✗ Use camelCase or snake_case
-- ✗ Use `is-` prefix for predicates
-- ✗ Use single-segment namespaces
-- ✗ Use single-branch `if` (use `when`)
-- ✗ Use `(not (empty? coll))` (use `seq`)
-- ✗ Use `get` without fallback
-- ✗ Combine laziness with side effects
-- ✗ Use `#()` for multi-expression functions
-- ✗ Write type-specific functions (use protocols)
+## Deep Dive References
 
-## Additional Resources
+For comprehensive explanations, examples, and edge cases:
 
-**Stuart Sierra's Do's and Don'ts:**
-- https://stuartsierra.com/tag/dos-and-donts
-- Lazy Effects: https://stuartsierra.com/2015/08/25/clojure-donts-lazy-effects
-- Redundant Map: https://stuartsierra.com/2015/04/26/clojure-donts-redundant-map
-- Single-Branch If: https://stuartsierra.com/2015/06/03/clojure-donts-single-branch-if
-- Non-Polymorphism: https://stuartsierra.com/2015/05/17/clojure-donts-non-polymorphism
+**`references/stuart-sierra-rules.md`**
+- Complete "Don'ts" series with full reasoning
+- Critical rules: lazy effects, redundant map, polymorphism
+- When and why each rule matters
+- Exceptions and nuances
 
-**Clojure Style Guide:**
-- https://guide.clojure.style
-- Comprehensive community-maintained style guide
+**`references/style-guide.md`**
+- Community-maintained Clojure Style Guide
+- Complete formatting and organization rules
+- Idiomatic patterns and best practices
+- Testing, documentation, and error handling
 
-**Apply this skill:**
-- When writing new Clojure code
-- When reviewing pull requests
-- When refactoring existing code
-- When explaining Clojure idioms to team members
+**Original Sources:**
+- Stuart Sierra: https://stuartsierra.com/tag/dos-and-donts
+- Clojure Style Guide: https://guide.clojure.style
 
-Remember: These conventions exist to make code more readable, maintainable, and idiomatic. When in doubt, prioritize clarity and consistency with the existing codebase.
+## When to Apply This Skill
+
+**Always:**
+- Writing new Clojure code
+- Reviewing pull requests
+- Refactoring existing code
+
+**Priority in Code Review:**
+1. Critical rules (lazy effects, get fallback)
+2. Naming conventions
+3. Idiomatic patterns
+4. Formatting and organization
+
+**Remember:** These conventions exist to make code more readable, maintainable, and idiomatic. When in doubt:
+- Prioritize clarity over cleverness
+- Make coupling explicit, not hidden
+- Follow community standards
+- Be consistent with existing codebase
+
+**For complex situations, consult the detailed references in the `references/` directory.**

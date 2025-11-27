@@ -23,16 +23,25 @@ Creates behavioral specifications using Gherkin (Given-When-Then) syntax with Sc
 
 ## What is Scenari?
 
-Scenari is a Clojure library for writing executable specifications using Gherkin syntax. Unlike Cucumber (Ruby) or Cucumber-JVM, Scenari is designed specifically for Clojure and emphasizes:
+Scenari (v2.0.2) is a Clojure library for writing executable specifications using Gherkin syntax. Unlike Cucumber (Ruby) or Cucumber-JVM, Scenari is designed specifically for Clojure and emphasizes:
 
 - **Simplicity**: Pure Clojure, no separate step definition files
-- **Testability**: Integrates with clojure.test
+- **Testability**: Integrates with clojure.test and Kaocha
 - **Traceability**: Link scenarios to requirements and architecture
-- **Expressiveness**: Rich Clojure DSL for step definitions
+- **Expressiveness**: Rich Clojure DSL for step definitions (defgiven, defwhen, defthen)
+- **State Management**: Immutable state flow between steps
 
-## Gherkin Syntax
+**Latest version:** `io.defsquare/scenari {:mvn/version "2.0.2"}`
 
-Gherkin uses a simple, readable syntax:
+## Reference Documentation
+
+For detailed API and syntax information, see:
+- **API Reference**: `references/api.md` - Complete Scenari API (deffeature, defgiven, defwhen, defthen, hooks, state management)
+- **Gherkin Reference**: `references/gherkin.md` - Complete Gherkin syntax guide (keywords, tags, patterns, best practices)
+
+## Gherkin Syntax Overview
+
+Gherkin uses a simple, readable syntax with keywords and natural language:
 
 ```gherkin
 Feature: User Authentication
@@ -60,19 +69,25 @@ Feature: User Authentication
     And no token should be returned
 ```
 
-### Gherkin Keywords
+### Gherkin Keywords Quick Reference
 
-- **Feature**: High-level description of functionality
-- **As a... I want... So that...**: User story format
-- **Background**: Steps run before each scenario
-- **Scenario**: Specific test case
+- **Feature**: High-level description of functionality with user story
+- **Background**: Steps run before each scenario (common setup)
+- **Scenario**: Specific test case with Given-When-Then
+- **Scenario Outline**: Template scenario with data table
+- **Examples**: Data table for Scenario Outline
 - **Given**: Preconditions and context setup
 - **When**: Actions or events
-- **Then**: Expected outcomes
-- **And**: Continue previous step type
-- **But**: Negative version of previous step type
-- **Scenario Outline**: Template with examples
-- **Examples**: Data table for scenario outline
+- **Then**: Expected outcomes and assertions
+- **And/But**: Continue previous step type
+
+**Tags** for organization:
+```gherkin
+@smoke @authentication @critical
+Scenario: Login validation
+```
+
+For complete Gherkin syntax, patterns, and best practices, see `references/gherkin.md`.
 
 ## Execution Steps
 
@@ -95,7 +110,7 @@ grep -r "scenari" deps.edn project.clj 2>/dev/null || echo "Scenari not found"
 If not found, guide user to add it to `deps.edn`:
 
 ```clojure
-{:deps {scenari/scenari {:mvn/version "0.1.0"}}
+{:deps {io.defsquare/scenari {:mvn/version "2.0.2"}}
 
  :aliases
  {:test {:extra-paths ["test"]
@@ -106,8 +121,10 @@ If not found, guide user to add it to `deps.edn`:
 Or for `project.clj`:
 
 ```clojure
-:dependencies [[scenari "0.1.0"]]
+:dependencies [[io.defsquare/scenari "2.0.2"]]
 ```
+
+**Important:** Use `io.defsquare/scenari` for the latest v2.x, not the older `scenari/scenari`.
 
 ### Step 3: Create Feature Directory Structure
 
@@ -207,31 +224,57 @@ Create Clojure step definition files in `test/step_definitions/`:
 ```clojure
 (ns step-definitions.auth-steps
   (:require [clojure.test :refer :all]
-            [scenari.core :refer :all]
+            [scenari.v2.core :refer [defgiven defwhen defthen deffeature]]
             [myapp.auth :as auth]))
 
-(defsteps auth-steps
+;; Given steps set up preconditions
+(defgiven "the system is running"
+  [_]
+  {:system-state :running})
 
-  (Given #"a registered user with email \"(.+)\"" [email]
-    (let [user (create-test-user! email)]
-      (assoc context :test-user user)))
+(defgiven "a registered user with email {string}"
+  [state email]
+  (let [user (create-test-user! email)]
+    (assoc state :test-user user)))
 
-  (Given #"the user has password \"(.+)\"" [password]
-    (update context :test-user assoc :password password))
+(defgiven "the user has password {string}"
+  [{:keys [test-user] :as state} password]
+  (assoc-in state [:test-user :password] password))
 
-  (When #"the user logs in with email \"(.+)\" and password \"(.+)\"" [email password]
-    (let [result (auth/login {:email email :password password})]
-      (assoc context :login-result result)))
+;; When steps perform actions
+(defwhen "the user logs in with email {string} and password {string}"
+  [state email password]
+  (let [result (auth/login {:email email :password password})]
+    (assoc state :login-result result)))
 
-  (Then #"the login should succeed" []
-    (is (= :success (get-in context [:login-result :status]))))
+;; Then steps verify outcomes
+(defthen "the login should succeed"
+  [{:keys [login-result]}]
+  (is (= :success (:status login-result))))
 
-  (Then #"a JWT token should be returned" []
-    (is (contains? (:login-result context) :token)))
+(defthen "a JWT token should be returned"
+  [{:keys [login-result]}]
+  (is (contains? login-result :token))
+  (is (not (nil? (:token login-result)))))
 
-  (Then #"the session should be active" []
-    (is (auth/session-active? (get-in context [:login-result :session-id])))))
+(defthen "the session should be active"
+  [{:keys [login-result]}]
+  (is (auth/session-active? (:session-id login-result))))
+
+;; Define feature with lifecycle hooks
+(deffeature auth-spec "test/features/authentication.feature"
+  {:pre-scenario-run [#'clear-test-data!]
+   :post-scenario-run [#'log-test-results!]
+   :default-scenario-state {}})
 ```
+
+**Key points:**
+- Import from `scenari.v2.core`
+- Use `defgiven`, `defwhen`, `defthen` (not `defsteps`)
+- First parameter is state from previous step
+- Use `{string}`, `{int}` matchers (not regex)
+- State flows immutably between steps
+- See `references/api.md` for complete API details
 
 ### Step 8: Create Vault Documentation
 
@@ -514,67 +557,69 @@ Feature: User Authentication
 
 ## Common Step Patterns
 
-Provide reusable step patterns:
+Provide reusable step patterns for typical scenarios:
 
 ### Setup Steps (Given)
 
 ```gherkin
 Given the system is running
 Given the database is clean
-Given a registered user with email "{email}"
-Given the user has role "{role}"
-Given a resource with ID "{id}"
-Given {count} concurrent users
+Given a registered user with email "alice@test.com"
+Given the user has role "admin"
+Given a resource with ID "12345"
+Given 100 concurrent users
 Given the cache is empty
+Given a product with data {:name "Laptop" :price 1000}
 ```
 
 ### Action Steps (When)
 
 ```gherkin
-When the user logs in with email "{email}" and password "{password}"
-When the user creates a resource with data:
-  """
-  {json}
-  """
-When the user updates resource "{id}"
-When the user deletes resource "{id}"
-When {count} users perform action simultaneously
+When the user logs in with email "user@test.com" and password "pass123"
+When the user creates a resource
+When the user updates resource "12345"
+When the user deletes resource "12345"
+When 100 users perform action simultaneously
+When I send a POST request to "/api/products"
 ```
 
 ### Assertion Steps (Then)
 
 ```gherkin
 Then the request should succeed
-Then the request should fail with status {code}
-Then an error message "{message}" should be returned
+Then the request should fail with status 401
+Then an error message "Invalid credentials" should be returned
 Then a JWT token should be returned
-Then the response should contain:
-  """
-  {json}
-  """
 Then the database should contain a record
 Then the cache should be updated
 Then an event should be published
 ```
 
-### Performance Steps
+### Quality Attribute Steps
 
+**Performance:**
 ```gherkin
-Then the response time should be less than {ms}ms
-Then {percentage}% of requests should complete in less than {ms}ms
-Then the throughput should be at least {count} requests per second
-Then memory usage should be less than {mb}MB
+Then the response time should be less than 200ms
+Then 95% of requests should complete in less than 500ms
+Then the throughput should be at least 1000 requests per second
 ```
 
-### Security Steps
-
+**Security:**
 ```gherkin
 Then the attempt should be logged
 Then an admin alert should be triggered
 Then the data should be encrypted
-Then the connection should use TLS
 Then no sensitive data should be in logs
 ```
+
+**Reliability:**
+```gherkin
+Then the system should handle the failure gracefully
+Then cached data should be served
+Then the circuit breaker should open
+```
+
+For more patterns and best practices, see `references/gherkin.md`.
 
 ## Integration with Quality Requirements
 
@@ -689,21 +734,77 @@ Add to CI pipeline:
   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 ```
 
+## Running Tests
+
+### With clojure.test
+
+```bash
+# Run all tests
+clojure -M:test
+
+# Run specific namespace
+clojure -M:test -n my.test.namespace
+```
+
+### With Kaocha
+
+Configure `tests.edn`:
+```clojure
+#kaocha/v1
+{:tests [{:id :scenario
+          :type :kaocha.type/scenari
+          :kaocha/source-paths ["src"]
+          :kaocha/test-paths ["test/scenario"]
+          :kaocha.type.scenari/glue-paths ["test/scenario/glue"]}]}
+```
+
+Run tests:
+```bash
+# Run all scenario tests
+clojure -M:kaocha :scenario
+
+# Run with specific tags
+clojure -M:kaocha :scenario --focus-meta :smoke
+clojure -M:kaocha :scenario --focus-meta :critical
+```
+
+### REPL-Driven Development
+
+```clojure
+(require '[scenari.v2.core :refer [run-feature]]
+         '[scenari.v2.test :refer [run-feature]])
+
+;; Debug mode - returns detailed execution report
+(scenari.v2.core/run-feature #'my-spec)
+
+;; Test mode - outputs formatted results
+(scenari.v2.test/run-feature #'my-spec)
+```
+
+For complete execution API, see `references/api.md`.
+
 ## Scenari vs Cucumber
 
 **Scenari Advantages**:
 - Pure Clojure (no JVM complexity)
-- Simpler setup (no separate step files)
-- Better Clojure integration
-- Lightweight
+- Simpler setup (v2: just defgiven/defwhen/defthen)
+- Better Clojure integration (immutable state flow)
+- Lightweight and fast
+- Integrates with Kaocha
 
 **Cucumber Advantages**:
 - More mature ecosystem
-- Better tooling (IDE support)
+- Better IDE tooling
 - Larger community
 - Multi-language support
 
-Choose Scenari for Clojure projects prioritizing simplicity.
+Choose Scenari for Clojure projects prioritizing simplicity and Clojure-native workflows.
+
+## Documentation Index
+
+- **Main skill**: Current file - Workflow and best practices
+- **API Reference**: `references/api.md` - Scenari v2 API documentation
+- **Gherkin Reference**: `references/gherkin.md` - Complete Gherkin syntax guide
 
 ## Related Skills
 

@@ -12,6 +12,14 @@ Use when working with data validation, schemas, or generative testing in Clojure
 - Transforming and coercing data
 - Building registry-based schema systems
 
+## Reference Documentation
+
+For comprehensive details, see:
+- `references/schema-types.md` - Complete reference of all built-in schema types
+- `references/transformations.md` - Data transformation, coercion, encoding/decoding
+- `references/generation.md` - Generative testing and property-based testing
+- `references/function-schemas.md` - Function schemas and instrumentation
+
 ## Dependency Setup
 
 ### Check for Malli in deps.edn
@@ -41,6 +49,8 @@ For development and testing, also add:
 ## Core Malli Concepts
 
 ### Basic Schema Types
+
+Malli schemas are first-class data structures that describe the shape of your data.
 
 ```clojure
 (require '[malli.core :as m])
@@ -80,6 +90,8 @@ number?          ;; Any number
  [:name string?]
  [:email {:optional true} string?]]  ;; Optional key
 ```
+
+**Note**: Maps are open by default (allow extra keys). Use `{:closed true}` to restrict to declared keys only. See `references/schema-types.md` for complete type reference.
 
 ## Schema Design Patterns
 
@@ -396,7 +408,9 @@ Define schemas for your domain entities:
 
 ## Data Transformation and Coercion
 
-### Transformers
+Malli provides powerful transformation capabilities for converting data between different representations (JSON, strings, EDN, etc.) while maintaining schema validity.
+
+### Built-in Transformers
 
 ```clojure
 (require '[malli.transform :as mt])
@@ -424,6 +438,15 @@ Define schemas for your domain entities:
   {:id "123" :age 30 :active true :extra-key "ignored"}
   (mt/strip-extra-keys-transformer))
 ;; => {:id "123", :age 30, :active true}
+
+;; Default value transformer
+(m/decode [:map
+           [:id :string]
+           [:count {:default 0} :int]
+           [:active {:default true} :boolean]]
+  {:id "123"}
+  (mt/default-value-transformer))
+;; => {:id "123", :count 0, :active true}
 ```
 
 ### Custom Transformers
@@ -449,10 +472,15 @@ Define schemas for your domain entities:
   (mt/transformer
     (mt/string-transformer)
     (mt/strip-extra-keys-transformer)
+    (mt/default-value-transformer)
     trim-strings-transformer))
 ```
 
+**See `references/transformations.md` for comprehensive transformation patterns and examples.**
+
 ## Function Schemas and Instrumentation
+
+Function schemas provide runtime validation of function inputs and outputs, with integration for static analysis tools like clj-kondo.
 
 ### Define Function Schemas
 
@@ -472,7 +500,7 @@ Define schemas for your domain entities:
 
 (m/=> create-user create-user-schema)
 
-;; Instrument for development
+;; Instrument for development (only validates when enabled)
 (mi/instrument!)
 
 ;; Now function calls are validated
@@ -501,7 +529,19 @@ Define schemas for your domain entities:
 (m/=> update-user update-user-schema)
 ```
 
+### Shorthand Syntax
+
+```clojure
+;; Use :-> for simpler function schemas
+[:-> :int :int]                      ; int → int
+[:-> :string :int :string]           ; (string, int) → string
+```
+
+**See `references/function-schemas.md` for comprehensive function schema patterns and instrumentation strategies.**
+
 ## Generative Testing
+
+Malli provides powerful generative testing capabilities built on test.check, automatically generating test data that conforms to your schemas.
 
 ### Basic Generation
 
@@ -512,10 +552,17 @@ Define schemas for your domain entities:
 (mg/generate UserSchema)
 ;; => {:email "xk@d.v", :age 42}
 
+(mg/sample UserSchema {:size 5})
+;; => Generate 5 samples
+
 (mg/generate [:vector UserSchema] {:size 3})
 ;; => [{:email "a@b.c", :age 10}
 ;;     {:email "x@y.z", :age 55}
 ;;     {:email "p@q.r", :age 23}]
+
+;; Reproducible generation with seed
+(mg/generate UserSchema {:seed 42})
+;; Always generates the same value
 ```
 
 ### Property-Based Testing
@@ -529,6 +576,7 @@ Define schemas for your domain entities:
    [:email [:re #"^[^\s@]+@[^\s@]+\.[^\s@]+$"]]
    [:age [:int {:min 0 :max 150}]]])
 
+;; Test that generated users always validate
 (defspec user-validation-test 100
   (prop/for-all [user (mg/generator UserSchema)]
     (m/validate UserSchema user)))
@@ -538,6 +586,13 @@ Define schemas for your domain entities:
   (prop/for-all [user (mg/generator UserSchema)]
     (let [birth-year (- 2025 (:age user))]
       (>= birth-year 1875))))
+
+;; Roundtrip testing (encode/decode)
+(defspec string-transformer-roundtrip 100
+  (prop/for-all [data (mg/generator UserSchema)]
+    (let [encoded (m/encode UserSchema data (mt/string-transformer))
+          decoded (m/decode UserSchema encoded (mt/string-transformer))]
+      (= data decoded))))
 ```
 
 ### Custom Generators
@@ -561,6 +616,8 @@ Define schemas for your domain entities:
 ;;     :email "abc123@example.com"
 ;;     :age 42}
 ```
+
+**See `references/generation.md` for comprehensive generative testing patterns and examples.**
 
 ## Integration with Guardrails
 
@@ -852,8 +909,40 @@ When defining schemas, link to quality requirements:
    [:re #"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d).*$"]])
 ```
 
+## Key Advantages of Malli
+
+1. **Schemas as Data**: First-class data structures (not macros) that can be manipulated, composed, and generated programmatically
+2. **Multiple Syntaxes**: Both vector syntax (convenient) and map syntax (AST) for different use cases
+3. **Comprehensive Type System**: Rich built-in types plus easy custom types
+4. **Performance**: Optimized validators for production use
+5. **Transformations**: Built-in support for coercion, encoding, decoding with composable transformers
+6. **Generative Testing**: Seamless integration with test.check for property-based testing
+7. **Function Schemas**: Runtime validation and static analysis integration
+8. **Multiple Formats**: Generate JSON Schema, Swagger/OpenAPI, documentation from schemas
+9. **Full Stack**: Works in Clojure, ClojureScript, Babashka, and GraalVM
+10. **Active Maintenance**: Well-maintained by Metosin with commercial support available
+
+## Workflow Tips
+
+1. **Start with Registry**: Define a central registry for your domain schemas
+2. **Schema-First Development**: Define schemas before implementation
+3. **Instrument in Development**: Enable function instrumentation only during development
+4. **Test with Generators**: Use property-based testing to validate business logic
+5. **Document in Vault**: Keep schema documentation in vault for team reference
+6. **Version Schemas**: Use namespaced versions when schemas evolve
+7. **Validate Early**: Use transformers at API boundaries to validate and coerce input
+8. **Test Transformations**: Use roundtrip tests to ensure encode/decode are inverses
+
 ## References
 
+**Internal Reference Documentation:**
+- `references/schema-types.md` - Complete schema type reference
+- `references/transformations.md` - Transformation and coercion guide
+- `references/generation.md` - Generative testing guide
+- `references/function-schemas.md` - Function schema reference
+
+**External Resources:**
 - Malli documentation: https://github.com/metosin/malli
 - Malli examples: https://github.com/metosin/malli/tree/master/docs
+- API documentation: https://cljdoc.org/d/metosin/malli/
 - Integration with Guardrails: See `guardrails-contracts.md`

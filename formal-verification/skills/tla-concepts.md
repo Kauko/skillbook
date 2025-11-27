@@ -4,500 +4,316 @@ description: Use when learning or explaining TLA+ formal specification concepts.
 
 # TLA+ Concepts: Formal Specification Fundamentals
 
-## Core Philosophy
+## What is TLA+?
 
 TLA+ (Temporal Logic of Actions) is a formal specification language for designing and reasoning about concurrent and distributed systems. Unlike testing which explores specific executions, formal verification exhaustively checks all possible behaviors.
 
-### Why Formal Specification?
+**Core insight:** Testing shows the presence of bugs, not their absence. TLA+ provides mathematical proof that your system satisfies its requirements across ALL possible executions.
 
-**Testing shows the presence of bugs, not their absence.** Formal verification provides mathematical proof that your system satisfies its requirements across ALL possible executions, including:
+## When to Use TLA+
 
-- Race conditions that occur once in a million runs
-- Edge cases involving specific timing or ordering
-- Subtle invariant violations in concurrent systems
-- Liveness properties (things that eventually happen)
+**Use formal specification when:**
 
-### When to Use Formal Methods
+1. **Concurrency is involved** - Race conditions, locks, distributed consensus
+2. **Correctness is critical** - Financial transactions, safety systems, security protocols
+3. **Design is complex** - Multiple components with intricate interactions
+4. **Before implementation** - Catching design flaws early is 10x cheaper than fixing production bugs
+5. **Learning from counterexamples** - Model checker finds concrete violation scenarios
 
-Use formal specification when:
-
-1. **Concurrency is involved**: Race conditions, locks, distributed consensus
-2. **Correctness is critical**: Financial transactions, safety systems, security protocols
-3. **Design is complex**: Multiple components with intricate interactions
-4. **Before implementation**: Catching design flaws early is 10x cheaper than fixing production bugs
-5. **Learning from counterexamples**: Model checker finds concrete violation scenarios
-
-Don't use for:
+**Don't use for:**
 - Simple CRUD operations
 - UI layout and styling
 - Performance optimization (though you can model performance properties)
 
-## Foundational Concepts
+## Key Concepts
 
-### 1. State Machines
+### State Machines
 
-Everything in TLA+ is modeled as a state machine:
+Everything in TLA+ is a state machine. A behavior is an infinite sequence of states:
 
-**State**: A snapshot of all variables at a point in time
-```
-State = {
-  balance: 100,
-  locked: false,
-  owner: "alice"
-}
-```
-
-**Initial State**: Where the system starts
-```
-Init == balance = 0 /\ locked = false
-```
-
-**Actions**: State transitions (what can happen)
-```
-Deposit(amount) ==
-  /\ locked = false          \* Precondition
-  /\ balance' = balance + amount  \* Effect on next state
-  /\ locked' = locked        \* Unchanged variables (frame condition)
-```
-
-**Behaviors**: Sequences of states connected by actions
 ```
 [State0] --Action1--> [State1] --Action2--> [State2] --Action3--> ...
 ```
 
-The model checker explores ALL possible behaviors.
+**Core components:**
+- **State:** Complete snapshot of all variables
+- **Init:** Predicate defining valid starting states
+- **Next:** Disjunction of all possible state transitions
+- **Actions:** Formulas relating current state (unprimed) to next state (primed)
 
-### 2. Temporal Logic
+```tla
+VARIABLES balance, locked
 
-TLA+ uses temporal logic to reason about properties over time:
+Init == balance = 0 /\ locked = FALSE
 
-**Always (□)**: Property holds in every state
-```
-□(balance >= 0)  \* Balance is always non-negative
-```
+Deposit ==
+  /\ locked = FALSE
+  /\ balance' = balance + 100
+  /\ UNCHANGED locked
 
-**Eventually (◇)**: Property holds in some future state
-```
-◇(status = "completed")  \* Request eventually completes
-```
-
-**Leads to (~>)**: If P happens, Q eventually happens
-```
-(request_sent) ~> (response_received)  \* Every request gets a response
+Spec == Init /\ [][Next]_vars
 ```
 
-**Think of behaviors as infinite sequences**:
-- "Always P" means P is true in every state of the sequence
-- "Eventually P" means P becomes true at some point (and might become false again)
-- "P leads to Q" means whenever P becomes true, Q eventually becomes true afterward
+**Critical rule:** Always specify frame conditions - what stays the same.
 
-### 3. Safety vs Liveness
+**Deep dive:** See [references/state-machines.md](references/state-machines.md) for Init, Next, actions, primed variables, stuttering, and state space exploration.
+
+### Temporal Logic
+
+Temporal operators express properties over time:
+
+**□ (Always):** Property holds in every state
+```tla
+[](balance >= 0)  \* Balance always non-negative
+```
+
+**◇ (Eventually):** Property holds in some future state
+```tla
+<>(status = "completed")  \* Eventually completes
+```
+
+**~> (Leads-to):** If P happens, Q eventually happens
+```tla
+(request_sent) ~> (response_received)  \* Every request gets response
+```
+
+**Combined operators:**
+- **◇□P** - Eventually always P (permanent convergence)
+- **□◇P** - Always eventually P (infinitely often)
+
+**Fairness constraints** prevent infinite stuttering:
+- **WF_vars(Action)** - Weak fairness: if continuously enabled, must occur
+- **SF_vars(Action)** - Strong fairness: if repeatedly enabled, must occur
+
+**Deep dive:** See [references/temporal-logic.md](references/temporal-logic.md) for detailed operator semantics, fairness, and debugging liveness properties.
+
+### Safety vs Liveness
 
 **Safety Properties** (bad things never happen):
-- Invariants: Conditions that must hold in every reachable state
-- Examples:
-  - "Balance never goes negative"
-  - "At most one process holds the lock"
-  - "Messages are delivered in order"
-- Violations are finite: Model checker finds a trace ending in violation
+- Violations are **finite** - single trace to bad state
+- Examples: mutex, no negative balance, messages delivered at most once
+- Fast to verify with TLC
 
 **Liveness Properties** (good things eventually happen):
-- Progress: System doesn't get stuck
-- Examples:
-  - "Every request eventually gets a response"
-  - "Deadlock never occurs indefinitely"
-  - "Fair scheduling: every thread eventually runs"
-- Violations are infinite: Model checker finds a trace with a cycle that never satisfies the property
+- Violations are **infinite** - cycle showing progress never happens
+- Examples: eventual termination, every request gets response, deadlock freedom
+- Slow to verify - requires cycle detection
 
-**Design Priority**: Always specify safety properties first. They're easier to check and violations are easier to understand.
+**Design priority:** Always specify safety properties first.
 
-### 4. Invariants
+**Deep dive:** See [references/invariants-properties.md](references/invariants-properties.md) for writing invariants, distinguishing safety/liveness, and debugging violations.
 
-An invariant is a boolean expression that must be true in all reachable states.
+### Invariants
 
-**Types of Invariants**:
+Boolean formulas true in all reachable states:
 
-1. **Type Invariants**: Variables have expected types/ranges
-   ```
-   TypeOK == /\ balance \in Nat
-             /\ status \in {"pending", "active", "completed"}
-   ```
-
-2. **Structural Invariants**: Data structure consistency
-   ```
-   StructureOK == Len(queue) <= MAX_SIZE
-   ```
-
-3. **Business Logic Invariants**: Domain rules
-   ```
-   BusinessRuleOK == (status = "completed") => (balance = expected_balance)
-   ```
-
-4. **Mutual Exclusion**: At most one process in critical section
-   ```
-   MutexOK == \A i, j \in Processes:
-              (i /= j) => ~(in_critical[i] /\ in_critical[j])
-   ```
-
-**Writing Good Invariants**:
-- Start simple: Type invariants first
-- Be specific: "balance >= 0" not "balance is valid"
-- Think negative: "bad thing never happens" not "only good things happen"
-- Decompose: Multiple small invariants better than one large one
-
-### 5. Primed Variables (Next State)
-
-In TLA+, `variable'` (pronounced "variable prime") refers to the value in the NEXT state:
-
-```
-Increment == count' = count + 1
-```
-
-This is fundamental to specifying actions:
-- Unprimed variables: Current state
-- Primed variables: Next state
-- Actions define the relationship between current and next state
-
-**Frame Conditions**: Variables not mentioned in an action can change arbitrarily. Always specify what stays the same:
-
-```
-\* BAD: Other variables might change unexpectedly
-Increment == count' = count + 1
-
-\* GOOD: Explicit about what doesn't change
-Increment == /\ count' = count + 1
-             /\ locked' = locked
-             /\ owner' = owner
-```
-
-Or use UNCHANGED:
-```
-Increment == /\ count' = count + 1
-             /\ UNCHANGED <<locked, owner>>
-```
-
-## Thinking in Formal Properties
-
-### From Requirements to Formal Specs
-
-**Requirement**: "A user can transfer money between accounts if they have sufficient balance"
-
-**Informal decomposition**:
-1. What are the states? (account balances, transfer status)
-2. What can happen? (transfer action)
-3. What are the preconditions? (sufficient balance)
-4. What are the postconditions? (balances updated, amounts conserved)
-5. What must always be true? (total money conserved, balances non-negative)
-
-**Formal specification**:
-```
-\* State
-VARIABLES balance_a, balance_b, total
-
+```tla
 \* Type invariant
-TypeOK == /\ balance_a \in Nat
-          /\ balance_b \in Nat
-          /\ total \in Nat
+TypeOK ==
+  /\ balance \in Nat
+  /\ status \in {"pending", "active", "completed"}
 
-\* Initial state
-Init == /\ balance_a = 100
-        /\ balance_b = 50
-        /\ total = 150
-
-\* Action
-Transfer(amount) ==
-  /\ amount > 0
-  /\ amount <= balance_a          \* Precondition: sufficient balance
-  /\ balance_a' = balance_a - amount    \* Effect
-  /\ balance_b' = balance_b + amount
-  /\ total' = total               \* Frame condition
-
-\* Safety invariant: Money is conserved
+\* Business invariant
 MoneyConserved == balance_a + balance_b = total
 
-\* Safety invariant: Balances never negative
-NoNegativeBalance == balance_a >= 0 /\ balance_b >= 0
+\* Mutual exclusion
+MutexOK ==
+  \A i, j \in Processes:
+    (i /= j) => ~(in_critical[i] /\ in_critical[j])
 ```
 
-### Gherkin to TLA+ Translation Patterns
+**Best practices:**
+- Start with type invariants
+- Decompose into multiple small invariants
+- Think negative: "bad thing never happens"
+- Be specific about bounds and constraints
 
-**Gherkin Given/When/Then** maps naturally to TLA+ concepts:
+**Deep dive:** See [references/invariants-properties.md](references/invariants-properties.md) for types of invariants, inductive invariants, and checking properties in TLC.
 
-**Given** (precondition) → Initial state or action precondition
+## From Requirements to Formal Specs
+
+**Gherkin to TLA+ translation:**
+
+| Gherkin | TLA+ |
+|---------|------|
+| **Given** (precondition) | Initial state or action precondition |
+| **When** (action) | State transition |
+| **Then** (postcondition) | Invariant or temporal property |
+
+**Example:**
 ```gherkin
-Given the account has balance 100
-```
-```tla
-Init == balance = 100
-```
-
-**When** (action) → State transition
-```gherkin
-When the user transfers 30 to another account
-```
-```tla
-Transfer(30) == /\ balance >= 30
-                /\ balance' = balance - 30
-                /\ other_balance' = other_balance + 30
-```
-
-**Then** (postcondition) → Invariant or temporal property
-```gherkin
-Then the balance should be 70
-```
-```tla
-\* As postcondition in action:
-Transfer(amount) == /\ balance' = balance - amount
-
-\* As invariant (if this should always hold after transfers):
-BalanceCorrect == (last_action = "transfer") =>
-                  (balance = old_balance - transfer_amount)
-```
-
-**More Complex Example**:
-
-```gherkin
-Scenario: Mutual exclusion in critical section
-  Given two processes want to enter critical section
-  When both processes try to enter simultaneously
-  Then at most one process should be in the critical section at any time
+Scenario: Account transfer
+  Given account A has balance 100
+  When user transfers 30 to account B
+  Then account A balance is 70
+  And total money is conserved
 ```
 
 ```tla
-VARIABLES in_critical, wants_entry
+Init == balance_a = 100 /\ balance_b = 0
 
-Init == /\ in_critical = [p \in Processes |-> FALSE]
-        /\ wants_entry = [p \in Processes |-> FALSE]
+Transfer(amount) ==
+  /\ amount <= balance_a
+  /\ balance_a' = balance_a - amount
+  /\ balance_b' = balance_b + amount
 
-RequestEntry(p) ==
-  /\ wants_entry' = [wants_entry EXCEPT ![p] = TRUE]
-  /\ UNCHANGED in_critical
-
-EnterCritical(p) ==
-  /\ wants_entry[p]
-  /\ ~(\E q \in Processes : (q /= p) /\ in_critical[q])  \* No one else inside
-  /\ in_critical' = [in_critical EXCEPT ![p] = TRUE]
-  /\ UNCHANGED wants_entry
-
-\* The "Then" becomes an invariant
-MutualExclusion ==
-  \A p, q \in Processes :
-    (p /= q) => ~(in_critical[p] /\ in_critical[q])
+MoneyConserved == balance_a + balance_b = 100
 ```
 
 ## Common Patterns
 
-### Pattern 1: Mutex (Mutual Exclusion)
-
-**Problem**: Ensure only one process accesses shared resource
-
-**Key Concepts**:
-- State: Which processes are in critical section
-- Safety: At most one process inside
-- Liveness: Every process eventually enters (if it wants to)
-
-**Skeleton**:
-```
-VARIABLES in_critical  \* in_critical[p] = is process p in critical section?
-
-MutexSafety == \A p, q \in Processes:
-               (p /= q) => ~(in_critical[p] /\ in_critical[q])
-
-MutexLiveness == \A p \in Processes:
-                 (wants_entry[p]) ~> (in_critical[p])
+### Pattern 1: Mutual Exclusion
+**Safety:** At most one process in critical section
+```tla
+MutexSafety ==
+  \A p, q \in Processes:
+    (p /= q) => ~(in_critical[p] /\ in_critical[q])
 ```
 
-### Pattern 2: Eventual Consistency
-
-**Problem**: Replicas eventually converge to same state
-
-**Key Concepts**:
-- State: Value at each replica, pending messages
-- Safety: Convergence properties (e.g., no conflicts)
-- Liveness: Eventually all replicas have same value
-
-**Skeleton**:
-```
-VARIABLES replica_value, messages
-
-EventuallyConsistent ==
-  []<>(messages = {} =>
-       \A r1, r2 \in Replicas: replica_value[r1] = replica_value[r2])
+### Pattern 2: Request-Response
+**Liveness:** Every request eventually gets response
+```tla
+GuaranteedResponse ==
+  \A req \in Requests: (req \in sent) ~> (req \in received)
 ```
 
-Read as: "Always eventually, if there are no pending messages, all replicas have the same value"
-
-### Pattern 3: Request-Response
-
-**Problem**: Every request gets a response
-
-**Key Concepts**:
-- State: Pending requests, sent responses
-- Safety: Responses match requests
-- Liveness: Every request eventually gets response
-
-**Skeleton**:
-```
-VARIABLES requests, responses
-
-RequestResponseMatch ==
-  \A req \in requests:
-    req \in responses => response_data[req] = expected_response(req)
-
-EventualResponse ==
-  \A req \in requests: <>(req \in responses)
+### Pattern 3: Eventual Consistency
+**Liveness:** Replicas eventually converge
+```tla
+EventualConsistency ==
+  <>[](no_messages =>
+       \A r1, r2 \in Replicas: value[r1] = value[r2])
 ```
 
 ### Pattern 4: State Machine Replication
-
-**Problem**: Multiple replicas execute same operations in same order
-
-**Key Concepts**:
-- State: Operation log at each replica
-- Safety: All replicas have same log prefix
-- Liveness: Operations eventually appear in all logs
-
-**Skeleton**:
-```
-VARIABLES log  \* log[replica] = sequence of operations
-
+**Safety:** All replicas have consistent log prefixes
+```tla
 LogConsistency ==
   \A r1, r2 \in Replicas:
     \A i \in 1..Min(Len(log[r1]), Len(log[r2])):
-      log[r1][i] = log[r2][i]  \* Same operation at same index
+      log[r1][i] = log[r2][i]
 ```
 
-## Educational Resources
+**Deep dive:** See [references/common-patterns.md](references/common-patterns.md) for complete implementations of mutex, message queues, consensus, leader election, two-phase commit, and more.
 
-### Leslie Lamport's Materials
+## Model Checking with TLC
 
-- **Video Course**: "TLA+ Video Course" by Leslie Lamport
-  - https://lamport.azurewebsites.net/video/videos.html
-  - Start here for foundational understanding
+**TLC** exhaustively explores the state space:
 
-- **Specifying Systems**: The canonical TLA+ book
-  - https://lamport.azurewebsites.net/tla/book.html
-  - Free PDF, comprehensive reference
+1. Generate all initial states satisfying `Init`
+2. Apply all enabled actions from `Next`
+3. Check invariants in each state
+4. Detect cycles for liveness properties
+5. Report violations with concrete traces
 
-- **Hyperbook**: Interactive TLA+ learning
-  - https://lamport.azurewebsites.net/tla/hyperbook.html
+**Managing state explosion:**
+- Use symmetry reduction
+- Bound parameters (queue sizes, process counts)
+- Model abstract values instead of concrete data
+- Start small, increase gradually
 
-### Practical Learning Path
+**Counterexamples:**
+- **Safety:** Finite trace to violating state
+- **Liveness:** Infinite trace with cycle
 
-1. **Week 1**: Watch Lamport's video lectures (1-3)
-   - Understand state machines, actions, invariants
+## Learning Path
 
-2. **Week 2**: Write first spec (simple counter, mutex)
-   - Focus on safety properties
-   - Learn to read TLC output
+1. **Week 1:** Watch Lamport's video lectures (1-3), understand state machines
+2. **Week 2:** Write simple specs (counter, mutex), focus on safety properties
+3. **Week 3:** Add liveness properties, understand fairness
+4. **Week 4:** Model a real system from your codebase, start small
 
-3. **Week 3**: Add temporal properties
-   - Liveness: eventual consistency, fairness
-   - Understand counterexample traces
+## Common Mistakes
 
-4. **Week 4**: Real system (your distributed cache, message queue)
-   - Start small: model core algorithm only
-   - Incrementally add complexity
+1. Forgetting frame conditions (`UNCHANGED`)
+2. Confusing safety and liveness
+3. Over-specifying implementation details
+4. Not starting with type invariants
+5. Making state space too large
 
-### Community Examples
-
-- **TLA+ Examples Repository**: https://github.com/tlaplus/Examples
-- **Real-world specs**: Amazon (S3, DynamoDB), Microsoft (Azure), MongoDB
-- **Dr. TLA+ Series**: Practical patterns blog by Hillel Wayne
-
-## Glossary
-
-**Action**: A state transition, relating current state to next state. Written with primed variables.
-
-**Behavior**: An infinite sequence of states where each transition is allowed by the spec.
-
-**Fairness**: Constraint that prevents infinite stuttering. Ensures actions eventually happen.
-
-**Invariant**: A boolean expression true in all reachable states. Safety property.
-
-**Liveness**: Property that good things eventually happen. Uses ◇ (eventually).
-
-**Model Checking**: Automated verification that exhaustively explores state space.
-
-**Primed Variable**: `var'` refers to value in next state. Used in actions.
-
-**Safety**: Property that bad things never happen. Uses □ (always).
-
-**State**: Complete assignment of values to all variables at a point in time.
-
-**State Space**: Set of all possible states the system can reach.
-
-**Stuttering**: Action that doesn't change state. TLA+ allows infinite stuttering unless fairness is specified.
-
-**Temporal Logic**: Logic for reasoning about sequences of states over time.
-
-**TLC**: The TLA+ model checker. Explores state space to find invariant violations.
-
-**Trace**: A sequence of states showing a specific execution path. Counterexamples are traces.
-
-## Pedagogical Approach
-
-When teaching TLA+:
-
-1. **Start with concrete examples**: Real bugs, race conditions
-2. **Draw state diagrams**: Visual intuition before formal syntax
-3. **Show counterexamples**: Model checker output is the best teacher
-4. **Iterate**: Spec, check, fix, repeat
-5. **Connect to code**: "This TLA+ action is like this function"
-6. **Emphasize thinking**: TLA+ is more about clear thinking than syntax
-
-**Common Beginner Mistakes**:
-
-- Forgetting frame conditions (UNCHANGED)
-- Confusing safety and liveness
-- Over-specifying implementation details
-- Not starting with type invariants
-- Making state space too large
-
-**Debugging Mindset**:
-
-When TLC finds a violation:
-1. **Read the trace**: What sequence of states led to the violation?
-2. **Identify the bad state**: Which state violates the invariant?
-3. **Work backwards**: What action created that state?
-4. **Question assumptions**: Is your invariant too strong? Action too weak?
-5. **Reproduce**: Can you construct this scenario by hand?
+**When TLC finds violations:** Read the trace, identify bad state, work backwards to find the action that caused it.
 
 ## Integration with Development
 
-**When to Write Specs**:
+**Workflow:** Write Gherkin scenarios → Translate to TLA+ → Run TLC → Fix spec → Implement code → Keep spec as documentation
 
-- **Design phase**: Before writing code, spec the algorithm
-- **Bug investigation**: Found a race condition? Spec it to understand
-- **Code review**: Complex concurrent logic? Spec to verify
-- **Refactoring**: Prove new implementation equivalent to old
+Store specs in `vault/specifications/formal/` with `.tla` files, traces, and design notes.
 
-**Workflow**:
+## Educational Resources
 
-1. Write Gherkin scenarios (human-readable requirements)
-2. Translate to TLA+ spec (formal model)
-3. Run TLC to find design flaws
-4. Fix spec, re-verify
-5. Implement code following verified spec
-6. Keep spec as living documentation
+### Primary Sources
 
-**Documentation Output**:
+**Leslie Lamport's Materials:**
+- [Video Course](https://lamport.azurewebsites.net/video/videos.html) - Start here
+- [Specifying Systems](https://lamport.azurewebsites.net/tla/book.html) - Free PDF, comprehensive
+- [TLA+ Hyperbook](https://lamport.azurewebsites.net/tla/hyperbook.html) - Interactive learning
 
-Store specifications in `vault/specifications/formal/`:
-```
-vault/specifications/formal/
-├── account-transfer.tla
-├── account-transfer-trace.txt  (counterexample if found)
-└── account-transfer-notes.md   (design decisions)
-```
+### Online Resources
+
+- [Learn TLA+](https://learntla.com/) - Comprehensive online tutorial
+- [TLA+ Examples](https://github.com/tlaplus/Examples) - Real-world specifications
+- [Hillel Wayne's Blog](https://www.hillelwayne.com/post/tla-messages/) - Practical patterns
+
+### Community Examples
+
+- **Industry specs:** Amazon (S3, DynamoDB), Microsoft (Azure), MongoDB
+- **Dr. TLA+ Series:** Practical patterns blog
+
+## Detailed References
+
+For deep dives into specific topics:
+
+- **[references/state-machines.md](references/state-machines.md)** - Init, Next, actions, primed variables, state space, frame conditions, stuttering
+- **[references/temporal-logic.md](references/temporal-logic.md)** - Temporal operators (□, ◇, ~>), fairness (WF, SF), combined operators, checking properties
+- **[references/invariants-properties.md](references/invariants-properties.md)** - Types of invariants, safety vs liveness, inductive invariants, debugging violations
+- **[references/common-patterns.md](references/common-patterns.md)** - Complete implementations: mutex, queues, consensus, leader election, 2PC, read-write locks
+
+## Glossary
+
+**Action** - State transition relating current state to next state (uses primed variables)
+
+**Behavior** - Infinite sequence of states where each transition follows Spec
+
+**Fairness** - Constraint preventing infinite stuttering (WF or SF)
+
+**Invariant** - Boolean expression true in all reachable states (safety property)
+
+**Liveness** - Property that good things eventually happen (uses ◇)
+
+**Primed Variable** - `var'` refers to value in next state
+
+**Safety** - Property that bad things never happen (uses □)
+
+**State** - Complete assignment of values to all variables
+
+**State Space** - Set of all reachable states
+
+**Stuttering** - Transition that doesn't change state
+
+**TLC** - TLA+ model checker that explores state space
 
 ## Next Steps
 
-After understanding these concepts:
+**After understanding these concepts:**
 
-1. **Try recife-modeling.md skill**: Practical Clojure-based TLA+ modeling
-2. **Model a real system**: Pick something with concurrency from your codebase
-3. **Join TLA+ community**: Google group, Slack, conferences
-4. **Read real specs**: AWS, Azure published specs show real-world complexity
+1. **Try recife-modeling.md skill** - Practical Clojure-based TLA+ modeling
+2. **Model a real system** - Pick concurrent/distributed code from your codebase
+3. **Join TLA+ community** - Google group, Slack, conferences
+4. **Read industry specs** - AWS, Azure published specs show real-world complexity
 
-Remember: **The goal is not perfect specs, but clearer thinking about system behavior.**
+**Remember:** The goal is not perfect specs, but clearer thinking about system behavior.
+
+## Sources
+
+- [Learn TLA+](https://www.learntla.com/core/tla.html)
+- [TLA+ Wikipedia](https://en.wikipedia.org/wiki/TLA+)
+- [Temporal Logic of Actions - Wikipedia](https://en.wikipedia.org/wiki/Temporal_logic_of_actions)
+- [Lamport: Specifying and Verifying Systems](https://lamport.org/pubs/spec-and-verifying.pdf)
+- [Temporal Properties - Learn TLA+](https://learntla.com/core/temporal-logic.html)
+- [Temporal Operators - Learn TLA+](https://old.learntla.com/temporal-logic/operators/)
+- [Hillel Wayne: Safety and Liveness](https://www.hillelwayne.com/post/safety-and-liveness/)
+- [Jack Vanlightly: Liveness Properties](https://jack-vanlightly.com/blog/2023/10/10/the-importance-of-liveness-properties-part1)
+- [Hillel Wayne: Modeling Message Queues](https://www.hillelwayne.com/post/tla-messages/)
+- [TLA+ Examples Repository](https://github.com/tlaplus/Examples)
+- [Concurrency in TLA+](https://learntla.com/core/concurrency.html)
+- [Lamport Mutex Specification](https://github.com/tlaplus/Examples/blob/master/specifications/lamport_mutex/LamportMutex.tla)

@@ -1,6 +1,20 @@
 # clj-kondo Linting
 
-Use when setting up or running clj-kondo for Clojure static analysis. clj-kondo is a powerful linter that catches errors, inconsistencies, and problematic patterns in Clojure code.
+Use when setting up or running clj-kondo for Clojure static analysis. clj-kondo is a powerful linter that catches errors, inconsistencies, and problematic patterns in Clojure code without requiring runtime evaluation.
+
+## What clj-kondo Detects
+
+clj-kondo performs comprehensive static analysis including:
+- **Arity mismatches** across namespaces and function calls
+- **Unused variables, imports, and namespaces**
+- **Unresolved symbols and namespace issues**
+- **Type-related inconsistencies** (e.g., `(inc :keyword)`)
+- **Duplicate map keys and set elements**
+- **Deprecated and private var usage**
+- **Style violations** aligned with community standards
+- **100+ configurable linters** for comprehensive code quality
+
+See `references/linters.md` for complete linter catalog.
 
 ## Installation Check
 
@@ -31,6 +45,8 @@ clj-kondo --version
 ```
 
 ## Configuration Setup
+
+For comprehensive configuration options, see `references/configuration.md`. This section covers essential setup.
 
 ### 1. Create `.clj-kondo/config.edn`
 
@@ -103,19 +119,20 @@ Many libraries ship with clj-kondo configuration. Import them automatically:
 clj-kondo --lint "$(clojure -Spath)" --dependencies --parallel --copy-configs
 ```
 
-This analyzes your dependencies (from `deps.edn`, `project.clj`, etc.) and copies library-specific configurations.
+This analyzes your dependencies (from `deps.edn`, `project.clj`, etc.) and copies library-specific configurations into `.clj-kondo/<org>/<lib>/config.edn`.
+
+**How it works:**
+- Libraries export configs at `clj-kondo.exports/<org>/<lib>/config.edn`
+- The `--copy-configs` flag copies these to your project's `.clj-kondo/` directory
+- Configs are automatically loaded on subsequent runs
 
 **Supported libraries include:**
-- malli
-- schema
-- cljs.test
-- re-frame
-- fulcro
-- integrant
-- mount
+- malli, schema (schema validation)
+- cljs.test, re-frame (ClojureScript)
+- fulcro, integrant, mount (frameworks)
 - And many more...
 
-Run this command whenever you add new dependencies.
+Run this command whenever you add new dependencies. See `references/configuration.md` for export/import details.
 
 ## Linting Scripts
 
@@ -367,22 +384,42 @@ lint:
 
 ### Ignore Specific Warnings
 
-**Inline:**
+**Inline suppression:**
 ```clojure
-;; Ignore next form
+;; Suppress all linters
+#_:clj-kondo/ignore
+(let [x 42] nil)
+
+;; Suppress specific linters
 #_{:clj-kondo/ignore [:unused-binding]}
 (let [x 42] nil)
 ```
 
-**In config:**
+**In config file:**
 ```clojure
 {:linters {:unused-binding {:level :off}}}
+
+;; Or short notation (2023.03.17+)
+{:ignore [:unused-binding]}
 ```
+
+**Namespace-level configuration:**
+```clojure
+(ns my.namespace
+  {:clj-kondo/config '{:linters {:unresolved-symbol {:level :off}}}})
+```
+
+See `references/configuration.md` for complete configuration options including:
+- Context-specific configuration (`:config-in-call`, `:config-in-tag`)
+- Namespace groups for unified settings
+- Output formatting and filtering
+- Per-linter exclusions and patterns
 
 ### Custom Hooks
 
-For complex macros, write custom hooks:
+For complex macros that clj-kondo doesn't understand, write custom hooks. Hooks transform macro calls into forms clj-kondo can analyze.
 
+**Simple hook example:**
 ```clojure
 ;; .clj-kondo/hooks/my_macro.clj
 (ns hooks.my-macro
@@ -396,10 +433,23 @@ For complex macros, write custom hooks:
              args))}))
 ```
 
-Register in config:
+**Register in config:**
 ```clojure
 {:hooks {:analyze-call {my.ns/my-macro hooks.my-macro/my-macro}}}
 ```
+
+**When to use hooks:**
+- Custom binding forms → Transform to `let`
+- Custom def forms → Transform to `def`
+- Complex macros causing false positives
+- Need custom validation with `reg-finding!`
+
+See `references/hooks.md` for comprehensive hook development guide including:
+- Hook types (analyze-call vs macroexpand)
+- Complete API reference
+- Development workflow and REPL testing
+- Common patterns and examples
+- Performance optimization
 
 ## Best Practices
 
@@ -423,10 +473,33 @@ Register in config:
 **Cache issues:**
 - Delete `.clj-kondo/.cache` and re-run
 
-## Resources
+## Detailed References
+
+This skill includes comprehensive reference documentation:
+
+- **`references/configuration.md`** - Complete configuration guide
+  - All configuration keys and options
+  - Config file locations and merge order
+  - Linter control and exclusions
+  - Macro configuration with `:lint-as`
+  - Output formatting and filtering
+  - Library config import/export
+
+- **`references/linters.md`** - Catalog of 100+ linters
+  - Complete linter descriptions
+  - Configuration options per linter
+  - Examples of what each linter catches
+  - Organized by category
+
+- **`references/hooks.md`** - Custom hook development
+  - Hook types and when to use them
+  - Complete hooks API reference
+  - Development workflow and debugging
+  - Common patterns and examples
+  - Performance optimization
+
+## External Resources
 
 - **clj-kondo GitHub:** https://github.com/clj-kondo/clj-kondo
-- **Configuration:** https://github.com/clj-kondo/clj-kondo/blob/master/doc/config.md
-- **Linters:** https://github.com/clj-kondo/clj-kondo/blob/master/doc/linters.md
-- **Hooks:** https://github.com/clj-kondo/clj-kondo/blob/master/doc/hooks.md
 - **Editor Integration:** https://github.com/clj-kondo/clj-kondo/blob/master/doc/editor-integration.md
+- **Community Configs:** https://github.com/clj-kondo/config

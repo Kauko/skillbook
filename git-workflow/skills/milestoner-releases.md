@@ -4,6 +4,10 @@
 
 Use when preparing releases, generating changelogs, or managing version tags. Milestoner automates changelog generation from git commits, creates release notes, and manages semantic versioning workflows.
 
+This skill provides workflow guidance. For comprehensive technical details, see:
+- **[Configuration Reference](milestoner-releases/references/configuration.md)** - All `.milestoner.yml` options with examples
+- **[Commands Reference](milestoner-releases/references/commands.md)** - Complete CLI command documentation
+
 ## When to Use
 
 - User mentions "release", "version", "changelog", or "tag"
@@ -46,87 +50,55 @@ Then: `bundle install`
 
 ### 2. Create Milestoner Configuration
 
-Create `.milestoner.yml` in repository root:
+Create `.milestoner.yml` in repository root. Here's a workflow-focused configuration:
 
 ```yaml
-# Milestoner Configuration
-version:
-  # Version format (semantic versioning)
-  format: "%{major}.%{minor}.%{patch}"
+# Milestoner Configuration for Workflow
+project:
+  name: "myproject"
+  owner: "myorg"
+  description: "Project description"
 
-changelog:
-  # Path to changelog file
-  file: "CHANGELOG.md"
+build:
+  format: "stream"      # Console output by default
+  output: "tmp/milestones"
 
-  # Changelog entry format
-  format: "* %{message}"
-
-  # Group commits by type
-  groups:
-    - name: "Features"
+commit:
+  # Categorize commits by emoji prefix
+  categories:
+    added:
       emoji: "✨"
-      prefixes: ["✨", ":sparkles:"]
-    - name: "Bug Fixes"
+      label: "Features"
+    fixed:
       emoji: "🐛"
-      prefixes: ["🐛", ":bug:", "🚑️", ":ambulance:"]
-    - name: "Performance"
-      emoji: "⚡️"
-      prefixes: ["⚡️", ":zap:"]
-    - name: "Refactoring"
-      emoji: "♻️"
-      prefixes: ["♻️", ":recycle:"]
-    - name: "Documentation"
-      emoji: "📝"
-      prefixes: ["📝", ":memo:", "🧭", ":compass:", "🔬", ":microscope:", "🥒", ":cucumber:"]
-    - name: "Tests"
-      emoji: "✅"
-      prefixes: ["✅", ":white_check_mark:"]
-    - name: "Architecture"
-      emoji: "🏗️"
-      prefixes: ["🏗️", ":building_construction:"]
-    - name: "Security"
-      emoji: "🔒️"
-      prefixes: ["🔒️", ":lock:"]
-    - name: "Infrastructure"
-      emoji: "🧱"
-      prefixes: ["🧱", ":bricks:", "🔧", ":wrench:", "👷", ":construction_worker:"]
-    - name: "Dependencies"
+      label: "Bug Fixes"
+    updated:
       emoji: "⬆️"
-      prefixes: ["⬆️", ":arrow_up:", "⬇️", ":arrow_down:"]
+      label: "Updates"
+    security:
+      emoji: "🔒"
+      label: "Security"
+    performance:
+      emoji: "⚡"
+      label: "Performance"
+    refactored:
+      emoji: "♻️"
+      label: "Refactoring"
+    removed:
+      emoji: "🗑️"
+      label: "Removed"
 
-  # Exclude commits matching these patterns
-  exclude:
-    - "^🤖 🔖"  # Exclude version tag commits
-    - "^Merge"  # Exclude merge commits
-    - "^WIP"    # Exclude work-in-progress
-    - "^wip"
+  format: "markdown"
+  uri: "https://github.com/%<project_owner>s/%<project_name>s/commit/%<commit_sha>s"
 
-release_notes:
-  # Directory for detailed release notes
-  directory: "vault/releases"
+tag:
+  subject: "Release %<project_version>s"
 
-  # Release note template
-  template: |
-    # Release %{version}
-
-    Released: %{date}
-
-    ## Summary
-
-    [High-level summary of this release]
-
-    ## Changes
-
-    %{changelog}
-
-    ## Migration Guide
-
-    [Breaking changes and migration steps, if any]
-
-    ## Contributors
-
-    [Thank contributors]
+tracker:
+  uri: "https://github.com/%<project_owner>s/%<project_name>s/issues/%<issue_id>s"
 ```
+
+For comprehensive configuration options including syndication feeds, custom templates, avatar configuration, and advanced categorization, see [Configuration Reference](milestoner-releases/references/configuration.md).
 
 ### 3. Initialize Changelog
 
@@ -156,8 +128,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 git log $(git describe --tags --abbrev=0)..HEAD --oneline
 
 # Or use milestoner to preview
-milestoner --preview
+milestoner build --format stream
 ```
+
+**Using Git Trailers for Automatic Versioning**:
+
+Milestoner can automatically determine version bumps from Git trailers in commit messages:
+
+```bash
+# Commit with milestone trailer
+git commit -m "Add OAuth2 authentication
+
+Implements OAuth2 support for Google and GitHub providers.
+
+Milestone: minor"
+```
+
+Trailer values:
+- `Milestone: patch` - Bug fixes (0.1.0 -> 0.1.1)
+- `Milestone: minor` - New features (0.1.0 -> 0.2.0)
+- `Milestone: major` - Breaking changes (0.1.0 -> 1.0.0)
+
+The highest milestone across all commits wins. See [Commands Reference](milestoner-releases/references/commands.md) for details.
 
 ### 2. Determine Version Bump
 
@@ -184,9 +176,12 @@ milestoner --publish 2.5.0
 ```
 
 This will:
-- Update CHANGELOG.md
-- Create a git tag
-- Generate commit message
+- Calculate version from Git trailers or use specified version
+- Generate release notes from commits since last tag
+- Create annotated Git tag (with GPG signing if configured)
+- Update configured outputs
+
+For complete command reference including build options, cache management, configuration commands, and Git trailer usage, see [Commands Reference](milestoner-releases/references/commands.md).
 
 ### 4. Create Detailed Release Notes
 
@@ -714,7 +709,14 @@ git tag -a v2.0.0 -m "Release version 2.0.0"
 git push origin main --tags
 ```
 
-## References
+## Detailed References
+
+See the `references/` directory for comprehensive documentation:
+
+- **[Configuration Reference](milestoner-releases/references/configuration.md)** - Complete `.milestoner.yml` options with examples
+- **[Commands Reference](milestoner-releases/references/commands.md)** - All CLI commands, options, and workflows
+
+## External Resources
 
 - [Milestoner Documentation](https://alchemists.io/projects/milestoner)
 - [Semantic Versioning](https://semver.org)

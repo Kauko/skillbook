@@ -4,6 +4,16 @@ description: Use when performing threat modeling or security analysis. Runs Thre
 
 # Threagile Threat Modeling Analysis
 
+## Reference Documentation
+
+Detailed reference documentation is available:
+
+- **[Model Schema Reference](threagile-analysis/references/model-schema.md)**: Complete YAML schema for threat models including all fields, enumerations, and data structures
+- **[Risk Rules Reference](threagile-analysis/references/risk-rules.md)**: Built-in risk detection rules organized by STRIDE categories with detection logic and mitigations
+- **[Outputs Reference](threagile-analysis/references/outputs.md)**: All output formats (PDF, JSON, Excel, diagrams) with integration examples
+
+Use these references when creating or modifying threat models, understanding risk findings, or integrating Threagile outputs.
+
 ## Prerequisites Check
 
 Before starting threat analysis, verify Threagile is available:
@@ -68,18 +78,22 @@ Execute Threagile threat analysis:
 
 ```bash
 cd vault/security
-threagile analyze --model threagile.yaml --output threat-analysis
+threagile analyze-model --model threagile.yaml --output threat-analysis
 ```
 
-This generates:
-- `threat-analysis/report.html` - Interactive HTML report
+This generates multiple output files (see [Outputs Reference](threagile-analysis/references/outputs.md) for details):
+- `threat-analysis/report.pdf` - Comprehensive PDF report
+- `threat-analysis/risks.json` - Machine-readable risk data
+- `threat-analysis/risks.xlsx` - Excel spreadsheet for tracking
+- `threat-analysis/tags.xlsx` - Tag-based risk grouping
+- `threat-analysis/technical-assets.json` - Asset inventory
+- `threat-analysis/stats.json` - Analysis statistics
 - `threat-analysis/data-flow-diagram.png` - Data flow visualization
 - `threat-analysis/data-asset-diagram.png` - Asset relationships
-- `threat-analysis/risks.json` - Machine-readable risk data
 
 ## Parse and Report Findings
 
-Parse the risk output and categorize by severity:
+Parse the risk output and categorize by severity. See [Risk Rules Reference](threagile-analysis/references/risk-rules.md) for detailed information about each risk category and [Outputs Reference](threagile-analysis/references/outputs.md) for output format details.
 
 1. Extract risks from `risks.json`:
    ```bash
@@ -88,8 +102,8 @@ Parse the risk output and categorize by severity:
 
 2. For each risk, extract:
    - **Risk ID**: Unique identifier
-   - **Category**: Type of threat (e.g., STRIDE category)
-   - **Severity**: Critical, High, Medium, Low
+   - **Category**: Type of threat (see STRIDE categories in Risk Rules Reference)
+   - **Severity**: Critical, High, Elevated, Medium, Low
    - **Title**: Short description
    - **Affected Asset**: Which component is at risk
    - **Impact**: What could happen
@@ -328,61 +342,71 @@ Next Steps:
 
 ## Common Threagile Model Patterns
 
-When creating or reviewing `threagile.yaml`, ensure it includes:
+When creating or reviewing `threagile.yaml`, ensure it includes proper structure. See [Model Schema Reference](threagile-analysis/references/model-schema.md) for complete field definitions.
 
-### Technical Assets
-```yaml
-technical_assets:
-  user-service:
-    id: user-service
-    description: User management and authentication service
-    type: service
-    usage: business
-    technologies:
-      - web-service-rest
-      - database
-    internet: false
-    encryption: tls
-    data_assets_processed:
-      - user-credentials
-      - user-profile-data
-```
+### Model Structure Overview
 
-### Data Assets
 ```yaml
+threagile_version: "1.0.0"
+title: "Application Name"
+date: "YYYY-MM-DD"
+business_criticality: "important"
+
 data_assets:
   user-credentials:
-    id: user-credentials
-    description: User passwords and authentication tokens
-    quantity: many
-    confidentiality: strictly-confidential
-    integrity: critical
-    availability: critical
-    data_breach_probability: possible
-```
+    id: "user-credentials"
+    description: "User passwords and authentication tokens"
+    usage: "business"
+    quantity: "many"
+    confidentiality: "strictly-confidential"
+    integrity: "critical"
+    availability: "critical"
+    justification_cia_rating: "Contains authentication secrets"
 
-### Trust Boundaries
-```yaml
+technical_assets:
+  user-service:
+    id: "user-service"
+    description: "User management service"
+    type: "process"
+    usage: "business"
+    size: "service"
+    technology: "web-service-rest"
+    internet: false
+    machine: "container"
+    encryption: "data-with-symmetric-shared-key"
+    confidentiality: "confidential"
+    integrity: "critical"
+    availability: "important"
+    justification_cia_rating: "Handles user credentials"
+    custom_developed_parts: true
+    data_assets_processed:
+      - "user-credentials"
+    communication_links:
+      database:
+        target: "user-database"
+        description: "Database access"
+        protocol: "jdbc-encrypted"
+        authentication: "credentials"
+        authorization: "technical-user"
+        usage: "business"
+        data_assets_sent:
+          - "user-credentials"
+
 trust_boundaries:
-  internet:
-    id: internet
-    description: Public internet
-    type: network-cloud-provider
+  internal:
+    id: "internal"
+    description: "Internal network"
+    type: "network-on-prem"
     technical_assets_inside:
-      - api-gateway
+      - "user-service"
+      - "user-database"
 ```
 
-### Data Flows
-```yaml
-data_flows:
-  user-login:
-    source: mobile-app
-    target: user-service
-    data_assets_sent:
-      - user-credentials
-    protocol: https
-    authentication: token
-```
+**Key Points:**
+- All assets require CIA (Confidentiality, Integrity, Availability) ratings with justification
+- Communication links must specify protocol, authentication, and data flows
+- Trust boundaries group assets by security domain
+- See [Model Schema Reference](threagile-analysis/references/model-schema.md) for all available fields and enumerations
 
 ## Troubleshooting
 
@@ -409,3 +433,6 @@ data_flows:
 5. **Traceability**: Link risks to requirements, components, and policies
 6. **Continuous**: Threat modeling is ongoing, not one-time
 7. **Documentation**: Keep threat-model.md up to date with current status
+8. **Complete Models**: Use comprehensive model structure (see [Model Schema Reference](threagile-analysis/references/model-schema.md))
+9. **Understand Risks**: Review risk categories and detection logic (see [Risk Rules Reference](threagile-analysis/references/risk-rules.md))
+10. **Integrate Outputs**: Leverage all output formats for different audiences (see [Outputs Reference](threagile-analysis/references/outputs.md))

@@ -574,6 +574,12 @@ spec:
 
 ## Testing Policies
 
+For comprehensive testing documentation including test structure, data-driven testing, mocking, coverage analysis, and CI/CD integration, see:
+
+**[references/testing.md](./policy-as-code/references/testing.md)**
+
+### Quick Testing Guide
+
 All policies include comprehensive test suites using OPA's testing framework:
 
 ```bash
@@ -585,6 +591,9 @@ opa test infrastructure/policies/terraform/encryption_test.rego -v
 
 # Run with coverage report
 opa test --coverage infrastructure/policies/
+
+# Filter tests by pattern
+opa test infrastructure/policies/ -v --run "encryption|network"
 ```
 
 **Coverage Requirements**:
@@ -630,7 +639,11 @@ Convert Rego policies to Gatekeeper ConstraintTemplates.
 
 ## Rego Language Guide
 
-### Basic Syntax
+For comprehensive Rego language documentation including syntax, data types, operators, functions, and advanced features, see:
+
+**[references/rego-language.md](./policy-as-code/references/rego-language.md)**
+
+### Quick Reference: Basic Syntax
 
 ```rego
 # Package declaration
@@ -663,7 +676,11 @@ violations := [msg |
 ]
 ```
 
-### Common Patterns
+### Common Patterns Quick Reference
+
+For detailed policy patterns including RBAC, Kubernetes admission control, infrastructure policies, and optimization techniques, see:
+
+**[references/policy-patterns.md](./policy-as-code/references/policy-patterns.md)**
 
 **Checking for missing fields**:
 ```rego
@@ -695,12 +712,39 @@ deny[msg] {
 }
 ```
 
+## Reference Documentation
+
+This skill includes comprehensive reference documentation:
+
+1. **[Rego Language Reference](./policy-as-code/references/rego-language.md)**
+   - Complete language syntax and semantics
+   - Data types, operators, and expressions
+   - Functions, comprehensions, and modules
+   - Built-in functions and metadata
+   - Best practices and performance tips
+
+2. **[Policy Patterns](./policy-as-code/references/policy-patterns.md)**
+   - Foundational patterns (deny, allow, warn, defaults)
+   - RBAC and ABAC patterns
+   - Kubernetes admission control patterns
+   - Infrastructure policy patterns (Terraform, Docker)
+   - Helper functions and optimization techniques
+
+3. **[Testing Guide](./policy-as-code/references/testing.md)**
+   - Test structure and organization
+   - Data-driven and parameterized testing
+   - Mocking with the `with` keyword
+   - Coverage analysis
+   - CI/CD integration
+   - Debugging and best practices
+
 ## Educational Resources
 
-- [OPA Documentation](https://www.openpolicyagent.org/docs/)
-- [Rego Playground](https://play.openpolicyagent.org/)
-- [Policy Library](https://github.com/open-policy-agent/library)
-- [Rego Style Guide](https://github.com/StyraInc/rego-style-guide)
+- [OPA Documentation](https://www.openpolicyagent.org/docs/) - Official documentation
+- [Rego Playground](https://play.openpolicyagent.org/) - Interactive testing environment
+- [OPA Policy Library](https://github.com/open-policy-agent/library) - Community examples
+- [Rego Style Guide](https://github.com/StyraInc/rego-style-guide) - Best practices
+- [OPA Gatekeeper Library](https://github.com/open-policy-agent/gatekeeper-library) - Kubernetes policies
 
 ## Maintenance
 
