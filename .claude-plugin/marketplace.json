@@ -80,6 +80,18 @@
       "description": "Create and optimize Dockerfiles using layer caching best practices",
       "source": "./container-mastery",
       "strict": false
+    },
+    {
+      "name": "feedback",
+      "description": "Get AI feedback on designs, code, and decisions via Zen MCP",
+      "source": "./feedback",
+      "strict": false
+    },
+    {
+      "name": "clojure-dev",
+      "description": "Clojure development tooling for Claude Code - REPL integration, web components, and delimiter handling",
+      "source": "./clojure-dev",
+      "strict": false
     }
   ]
 }

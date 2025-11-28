@@ -2,8 +2,11 @@
   "name": "container-mastery",
   "version": "1.0.0",
   "description": "Create and optimize Dockerfiles using layer caching best practices",
-  "author": "Teemu Kaukoranta",
+  "author": {
+    "name": "Teemu Kaukoranta",
+    "email": "teemu.kaukoranta@metosin.fi"
+  },
   "skills": [
-    "skills/optimizing-dockerfiles.md"
+    "./skills/optimizing-dockerfiles.md"
   ]
 }
