@@ -1,6 +1,13 @@
 ---
 name: clojure-repl
-description: Use when programming Clojure to evaluate code in a running nREPL, discover available REPLs, and leverage REPL-driven development. Guides interactive development workflow using clojure-mcp-light tools.
+description: Use when an nREPL server is running and you need to evaluate code, test functions, or debug interactively. Prefer REPL evaluation over re-running entire programs.
+requires:
+  tools: [clj-nrepl-eval, bb]
+  skills: []
+skip_when:
+  - No nREPL server is running (check with --discover-ports)
+  - Running one-off scripts (use bb or clojure directly)
+  - User asks to run tests (use test runner instead)
 ---
 
 # Clojure REPL Development
@@ -9,7 +16,12 @@ Guide for REPL-driven Clojure development using clojure-mcp-light.
 
 ## Prerequisites
 
-Install clojure-mcp-light (requires babashka and bbin):
+```bash
+command -v bb >/dev/null || { echo "Install: brew install borkdude/brew/babashka"; exit 1; }
+command -v clj-nrepl-eval >/dev/null || { echo "Install clojure-mcp-light - see below"; exit 1; }
+```
+
+Install clojure-mcp-light if missing:
 
 ```bash
 # Install bbin if not already installed
@@ -201,3 +213,9 @@ This means you can write Clojure naturally and trust that parentheses will be ba
 - Check hook is configured in settings.json
 - Run manually: `clj-paren-repair-claude-hook --cljfmt`
 - Check logs: `clj-paren-repair-claude-hook --log-level debug`
+
+## Success Criteria
+
+- [ ] `clj-nrepl-eval --discover-ports` finds at least one REPL
+- [ ] Code evaluation returns expected results
+- [ ] Namespace reloading works without errors
