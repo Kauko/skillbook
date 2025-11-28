@@ -1,188 +1,79 @@
-# Git Commit Conventions with git-lint
+---
+name: git-lint-setup
+description: Use when user wants to set up commit message conventions, configure commit linting, or establish gitmoji standards for AI commits.
+requires:
+  tools: [git-lint]
+  skills: []
+---
 
-## Description
+# Git Commit Conventions
 
-Use when setting up git commit conventions in a repository. Implements a two-tier commit system: humans commit freely without restrictions, while AI agents follow strict gitmoji-based conventions validated by git-lint.
+Two-tier system: humans commit freely, AI agents follow strict gitmoji conventions.
 
-## When to Use
+## Prerequisites
 
-- User asks to set up commit conventions or standards
-- User mentions git-lint, gitmoji, or commit message formatting
-- Starting a new project that needs commit guidelines
-- User wants to enforce commit quality for AI agents only
+```bash
+command -v git-lint >/dev/null || { echo "Install: gem install git-lint"; exit 1; }
+```
 
-## Two-Tier Commit System
+## Agent Commit Format
 
-### HUMANS: Freedom First
-
-- No rules, no validation, no friction
-- Commit in any format, any style
-- git-lint hook automatically skips human commits
-- Full creative freedom for human developers
-
-### AGENTS: Structured Precision
-
-AI agents MUST follow this format:
 ```
 🤖 <gitmoji> <message>
 
-Optional body with more details.
+Optional body explaining why.
 ```
 
-Rules for agents:
-- Every commit starts with 🤖 emoji
-- Followed by appropriate gitmoji from table below
-- Single concern per commit (no mixing features + docs)
-- Scope required for code changes: `🤖 ✨ (orders) Add bulk processing`
-- Present tense, imperative mood: "Add feature" not "Added feature"
-- Clear, descriptive messages explaining WHY, not just WHAT
+**Rules:**
+- Start with 🤖
+- Use appropriate gitmoji
+- One concern per commit
+- Present tense, imperative: "Add feature" not "Added"
 
-## Gitmoji Reference for Agents
+## Gitmoji Reference
 
-| Category | Emoji | Code | Use |
-|----------|-------|------|-----|
-| **Feature** | ✨ | `:sparkles:` | New features or capabilities |
-| **Bug Fix** | 🐛 | `:bug:` | Bug fixes (non-critical) |
-| **Hotfix** | 🚑️ | `:ambulance:` | Critical production fixes |
-| **Refactor** | ♻️ | `:recycle:` | Code refactoring without behavior change |
-| **Tests** | ✅ | `:white_check_mark:` | Adding or updating tests |
-| **Architecture** | 🏗️ | `:building_construction:` | Architectural changes |
-| **Security** | 🔒️ | `:lock:` | Security fixes or improvements |
-| **Docs** | 📝 | `:memo:` | General documentation |
-| **ADR** | 🧭 | `:compass:` | Architecture Decision Records |
-| **Formal Spec** | 🔬 | `:microscope:` | TLA+ or Recife specifications |
-| **BDD Spec** | 🥒 | `:cucumber:` | Gherkin/Cucumber scenarios |
-| **Types/Schemas** | 🏷️ | `:label:` | Type definitions, Malli schemas |
-| **Validation** | 🦺 | `:safety_vest:` | Guardrails contracts, validation |
-| **Infrastructure** | 🧱 | `:bricks:` | Infrastructure as Code changes |
-| **Config** | 🔧 | `:wrench:` | Configuration changes |
-| **Release** | 🔖 | `:bookmark:` | Version tags and releases |
-| **Performance** | ⚡️ | `:zap:` | Performance improvements |
-| **CI/CD** | 👷 | `:construction_worker:` | CI/CD pipeline changes |
-| **Dependencies** | ⬆️ | `:arrow_up:` | Dependency upgrades |
-| **Revert** | ⏪️ | `:rewind:` | Reverting changes |
+| Emoji | Code | Use |
+|-------|------|-----|
+| ✨ | `:sparkles:` | New feature |
+| 🐛 | `:bug:` | Bug fix |
+| 🚑️ | `:ambulance:` | Critical hotfix |
+| ♻️ | `:recycle:` | Refactor |
+| ✅ | `:white_check_mark:` | Tests |
+| 📝 | `:memo:` | Documentation |
+| 🔧 | `:wrench:` | Configuration |
+| 🔒️ | `:lock:` | Security |
+| ⬆️ | `:arrow_up:` | Upgrade deps |
+| 🗑️ | `:wastebasket:` | Remove code |
+| 🚧 | `:construction:` | Work in progress |
 
-## Setup Process
+## Configuration
 
-### 1. Check for git-lint
-
-```bash
-which git-lint
-```
-
-If not found, guide installation:
-
-```bash
-gem install git-lint
-```
-
-For project-specific installation, create `Gemfile`:
-```ruby
-source "https://rubygems.org"
-gem "git-lint"
-```
-
-Then: `bundle install`
-
-### 2. Create git-lint Configuration
-
-Create `.git-lint.yml` in repository root:
-
+`.git-lint.yml`:
 ```yaml
-# Two-tier validation: humans free, agents validated
-commits:
-  author:
-    capitalization:
-      enabled: true
-      severity: error
-    email:
-      enabled: true
-      severity: error
-    name:
-      enabled: true
-      severity: error
-      minimum: 2
-
-  body:
-    bullet_capitalization:
-      enabled: true
-      severity: error
-    leading_line:
-      enabled: true
-      severity: error
-    line_length:
-      enabled: false  # Allow URLs and code snippets
-    paragraph_capitalization:
-      enabled: true
-      severity: error
-    phrase:
-      enabled: true
-      severity: warn
-      excludes:
-        - "absolutely"
-        - "actually"
-        - "basically"
-        - "easy"
-        - "just"
-        - "obvious"
-        - "obviously"
-        - "of course"
-        - "simply"
-    presence:
-      enabled: true
-      severity: warn
-      minimum: 1
-    word_repeat:
-      enabled: true
-      severity: error
-
-  subject:
-    length:
-      enabled: true
-      severity: error
-      maximum: 72
-    prefix:
-      enabled: false  # Disabled for gitmoji workflow
-    suffix:
-      enabled: true
-      severity: error
-      excludes: ["!", ".", "?"]
-    word_repeat:
-      enabled: true
-      severity: error
-
-  signature:
-    enabled: false
-
-branches:
-  enabled: true
-  name: "\\A[a-z]+[a-z0-9-]*\\Z"
-
-issues:
-  enabled: false
+analyzers:
+  commit_body_leading_line:
+    enabled: true
+  commit_subject_length:
+    enabled: true
+    maximum: 72
+  commit_subject_prefix:
+    enabled: true
+    includes:
+      - "🤖 ✨"
+      - "🤖 🐛"
+      - "🤖 ♻️"
+      - "🤖 📝"
 ```
 
-For complete configuration options, see [references/configuration.md](./references/configuration.md).
-For all analyzers and customization, see [references/analyzers.md](./references/analyzers.md).
+## Pre-commit Hook
 
-### 3. Install Custom commit-msg Hook
-
-CRITICAL: The hook MUST only validate commits starting with 🤖:
-
+`.git/hooks/commit-msg`:
 ```bash
 #!/bin/bash
-# .git/hooks/commit-msg
-# Only validate agent commits (🤖 prefix)
-
-commit_message=$(head -1 "$1")
-
-if [[ "$commit_message" == 🤖* ]]; then
-  git-lint --commit-msg "$1"
-  exit $?
+# Only validate AI commits (start with 🤖)
+if head -1 "$1" | grep -q "^🤖"; then
+    git-lint --hook commit-msg "$1"
 fi
-
-# Human commits always pass
-exit 0
 ```
 
 Make executable:
@@ -190,152 +81,26 @@ Make executable:
 chmod +x .git/hooks/commit-msg
 ```
 
-### 4. Document Conventions
-
-Create `vault/decisions/0000-commit-conventions.md`:
-
-```markdown
-# ADR 0000: Commit Conventions
-
-## Status
-
-Accepted
-
-## Context
-
-Need clear commit conventions that:
-- Allow human flexibility and creativity
-- Enforce structure for AI agent commits
-- Enable automated changelog generation
-- Support semantic release workflows
-
-## Decision
-
-Implement two-tier commit system:
-
-### Tier 1: Human Commits
-- No restrictions or validations
-- Any format acceptable
-- Maximum flexibility for developers
-
-### Tier 2: Agent Commits
-- Must start with 🤖 emoji
-- Follow gitmoji conventions
-- Validated by git-lint
-- Format: `🤖 <gitmoji> <message>`
-
-## Consequences
-
-### Positive
-- Zero friction for human developers
-- Structured, parseable agent commits
-- Better changelog generation
-- Clear distinction between human/agent work
-
-### Negative
-- Agents must learn gitmoji taxonomy
-- Hook maintenance required
-- Two different commit styles in history
-
-## References
-
-- [git-lint](https://alchemists.io/projects/git-lint)
-- [gitmoji](https://gitmoji.dev)
-- [Conventional Commits](https://www.conventionalcommits.org)
-```
-
-### 5. Guide Agent Usage
-
-When making commits as an agent:
-
-1. Analyze the change type
-2. Select appropriate gitmoji from reference table
-3. Write clear, descriptive message
-4. Include scope for code changes
-5. Commit using the format
-
-Example workflow:
-```bash
-# Feature addition
-git commit -m "🤖 ✨ (auth) Add OAuth2 provider support
-
-Implements Google and GitHub OAuth2 authentication flows
-with PKCE support for enhanced security."
-
-# Bug fix
-git commit -m "🤖 🐛 (orders) Fix duplicate order creation
-
-Prevent race condition when users double-click submit button."
-
-# Documentation
-git commit -m "🤖 📝 Update API documentation for v2 endpoints"
-
-# Refactoring
-git commit -m "🤖 ♻️ (database) Extract connection pooling logic"
-```
-
-## Using gitmoji-cli (Optional)
-
-For interactive emoji selection:
+## Example Commits
 
 ```bash
-npm install -g gitmoji-cli
-gitmoji -c
+# Agent commits
+🤖 ✨ Add user authentication
+🤖 🐛 Fix login timeout on slow connections
+🤖 ♻️ Extract validation logic to separate module
+🤖 📝 Document API endpoints
+
+# Human commits - any format
+Fixed the thing
+WIP stuff
 ```
 
-This provides an interactive prompt for selecting appropriate gitmoji.
+## Success Criteria
 
-## Validation Testing
+- [ ] `.git-lint.yml` configuration exists
+- [ ] Pre-commit hook installed and executable
+- [ ] AI commits validated with gitmoji prefix
 
-Test the hook works correctly:
+## Related Skills
 
-```bash
-# Human commit (should pass)
-git commit -m "wip stuff"
-
-# Agent commit without proper format (should fail)
-git commit -m "🤖 add feature"
-
-# Agent commit with proper format (should pass)
-git commit -m "🤖 ✨ (core) Add feature X"
-```
-
-## Integration with Milestoner
-
-Well-formatted commits enable better changelog generation:
-- Gitmoji provides visual categorization
-- Scopes group related changes
-- Clear messages become readable changelog entries
-
-When using Milestoner for releases, it can parse these structured commits to generate organized, scannable changelogs.
-
-## Troubleshooting
-
-### Hook not running
-- Check hook is executable: `ls -la .git/hooks/commit-msg`
-- Verify shebang is correct: `#!/bin/bash`
-- Test hook directly: `.git/hooks/commit-msg .git/COMMIT_EDITMSG`
-
-### git-lint errors
-- Check `.git-lint.yml` syntax is valid YAML
-- Verify regex patterns are properly escaped
-- Run `git-lint --help` for configuration options
-
-### Emoji rendering
-- Ensure terminal supports UTF-8
-- Check font includes emoji support
-- Test with: `echo "🤖 ✨ 🐛"`
-
-## Detailed References
-
-For comprehensive documentation on git-lint:
-
-- [Configuration Reference](./references/configuration.md) - Complete guide to all `.git-lint.yml` options with examples
-- [Analyzers Reference](./references/analyzers.md) - All 40+ built-in analyzers, their purposes, and customization guidance
-
-## External Resources
-
-- [git-lint Documentation](https://alchemists.io/projects/git-lint) - Official git-lint documentation
-- [gitmoji Guide](https://gitmoji.dev) - Complete gitmoji reference with visual examples
-- [GitHub Emoji Cheat Sheet](https://github.com/ikatyang/emoji-cheat-sheet) - Searchable emoji reference
-- [Conventional Commits](https://www.conventionalcommits.org) - Alternative commit convention standard
+- `milestoner-releases` - Uses commit messages for changelogs
