@@ -112,6 +112,14 @@ Beads syncs automatically:
 - [ ] `bd` lists tasks correctly
 - [ ] Task dependencies tracked with `bd dep`
 
+## Linking Requirements
+
+When creating tasks:
+- Link to ADRs: `Decision: [[decisions/0005-feature-approach]]`
+- Link to specs: `Spec: [[specifications/feature.feature]]`
+- Link to components: `Component: [[components/button]]`
+- Link to arc42 sections: `Docs: [[arc42/06-runtime#scenario]]`
+
 ## Related Skills
 
 - `adr-management` - Link tasks to architectural decisions

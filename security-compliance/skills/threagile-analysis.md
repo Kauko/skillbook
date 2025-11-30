@@ -190,6 +190,13 @@ verify_threagile "$@"
 - [ ] `risks_json:exists` - Risk report generated
 - [ ] `risks_unaddressed:0` - All risks have accept/mitigate/transfer decision
 
+## Linking Requirements
+
+When documenting threats and mitigations:
+- Link to ADRs for mitigations: `Mitigation: [[decisions/0008-encrypt-at-rest]]`
+- Link to arc42 crosscutting: `See [[arc42/08-crosscutting#security]]`
+- Link to policies: `Policy: [[policies/encryption.rego]]`
+
 ## Related Skills
 
 - `policy-as-code` - Policy enforcement

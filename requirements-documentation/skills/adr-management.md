@@ -177,6 +177,15 @@ verify_adr "$@"
 - [ ] `status:Proposed|Accepted` - Valid status field
 - [ ] `index_updated:true` - Index references this ADR
 
+## Linking Requirements
+
+When creating an ADR:
+- Link to superseded ADRs: `Supersedes [[0001-old-decision]]`
+- Link to related ADRs: `Related: [[0003-related-decision]]`
+- Link to arc42 sections: `See [[04-solution#relevant-heading]]`
+- Link to beads task if applicable: `Task: [[beads/TASK-123]]`
+- Link to glossary terms on first use: `[[glossary#term]]`
+
 ## Related Skills
 
 - `arc42-docs` - Section 9 summarizes ADRs

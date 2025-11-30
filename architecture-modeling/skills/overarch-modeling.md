@@ -184,6 +184,13 @@ verify_overarch "$@"
 - [ ] `views_edn:exists` - Views file created
 - [ ] `overarch_check:pass` - Model validates without errors
 
+## Linking Requirements
+
+When documenting the architecture model:
+- Link to ADRs: `Decision: [[decisions/0002-microservices]]`
+- Link to arc42 sections: `See [[arc42/05-building-blocks]]`
+- Link to threat model: `Threats: [[security/threats]]`
+
 ## Related Skills
 
 - `structurizr-diagrams` - Alternative visualization

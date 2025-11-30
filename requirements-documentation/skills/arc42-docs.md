@@ -93,6 +93,15 @@ Link between sections and to:
 - [ ] ADRs referenced in section 09
 - [ ] Quality scenarios in section 10
 
+## Linking Requirements
+
+When updating arc42 sections:
+- Link to ADRs: `Decision: [[decisions/0005-use-malli]]`
+- Link to threat model: `Threats: [[security/threats#data-flow]]`
+- Link to components: `Uses [[components/button]]`
+- Link to specifications: `Spec: [[specifications/feature]]`
+- Link to glossary terms: `[[glossary#term]]`
+
 ## Related Skills
 
 - `init-obsidian-vault` - Creates vault structure (run first)

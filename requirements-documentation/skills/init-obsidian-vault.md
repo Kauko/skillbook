@@ -119,6 +119,21 @@ Created directories:
 Next: Use arc42-docs, adr-management, or other skills
 ```
 
+## Linking Conventions
+
+The vault uses Obsidian `[[wiki-links]]` for interconnection:
+
+| From | To | Example |
+|------|----|---------|
+| ADR | Related ADRs | `Supersedes [[0001-use-clojure]]` |
+| ADR | Arc42 sections | `See [[04-solution#auth]]` |
+| Arc42 | ADRs | `Decision: [[decisions/0005-use-malli]]` |
+| Arc42 | Threats | `Threats: [[security/threats#data-flow]]` |
+| Component | Mockup | `Design: [[mockups/button]]` |
+| Any | Glossary | `[[glossary#term]]` on first use |
+
+Create a glossary template at `vault/glossary.md` with instructions for adding terms.
+
 ## Success Criteria
 
 - [ ] `vault/` directory exists with subdirectories

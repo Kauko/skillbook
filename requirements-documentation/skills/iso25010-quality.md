@@ -82,6 +82,13 @@ ISO 25010 Product Quality
 - [ ] Metrics defined with measurable targets
 - [ ] Linked to arc42 section 10
 
+## Linking Requirements
+
+When defining quality requirements:
+- Link to arc42 section 10: `See [[arc42/10-quality]]`
+- Link to related ADRs: `Decision: [[decisions/0007-performance-target]]`
+- Link to SLOs if defined: `SLO: [[requirements/slo-response-time]]`
+
 ## Related Skills
 
 - `arc42-docs` - Section 10 uses quality scenarios

@@ -106,6 +106,14 @@ Steps receive and return state (immutable map):
 - [ ] Step definitions implemented
 - [ ] `scenari/run-feature` executes without errors
 
+## Linking Requirements
+
+When creating Gherkin specs:
+- Link to components: `Components: [[components/button]], [[components/form]]`
+- Link to ADRs: `Decision: [[decisions/0010-validation-approach]]`
+- Link to beads task: `Task: [[beads/FEAT-456]]`
+- Link to arc42 runtime section: `See [[arc42/06-runtime]]`
+
 ## Related Skills
 
 - `iso25010-quality` - Link scenarios to quality requirements
