@@ -9,5 +9,11 @@
   "homepage": "https://github.com/Kauko/skillbook",
   "repository": "https://github.com/Kauko/skillbook",
   "license": "MIT",
-  "keywords": ["clojure", "clojurescript", "repl", "nrepl", "development", "parinfer", "zero", "web-components", "shadow-cljs"]
+  "keywords": ["clojure", "clojurescript", "repl", "nrepl", "development", "parinfer", "zero", "web-components", "shadow-cljs"],
+  "skills": [
+    "./skills/clojure-repl.md",
+    "./skills/zero-components.md",
+    "./skills/ui-mockups.md",
+    "./skills/playwright-testing.md"
+  ]
 }

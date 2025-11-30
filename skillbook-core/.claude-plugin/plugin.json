@@ -9,5 +9,19 @@
   "homepage": "https://github.com/Kauko/skillbook",
   "repository": "https://github.com/Kauko/skillbook",
   "license": "MIT",
-  "keywords": ["skills", "project-init", "orchestration"]
+  "keywords": ["skills", "project-init", "orchestration"],
+  "skills": [
+    "./skills/using-skillbook.md",
+    "./skills/review-checkpoints.md",
+    "./skills/deepwiki-lookup.md",
+    "./skills/project-init.md",
+    "./skills/error-recovery.md"
+  ],
+  "agents": [
+    "./agents/project-init.md",
+    "./agents/clojure-developer.md"
+  ],
+  "commands": [
+    "./commands/new-project.md"
+  ]
 }
