@@ -286,6 +286,55 @@ Open [[demos/{name}.html]] in browser
 </html>
 ```
 
+## Component Library Workflow
+
+Components MUST be created in the library before integration:
+
+### 1. Mockup First
+
+Before implementing, create and get approval for mockup:
+- Use `ui-mockups` skill
+- Create `mockups/<component>.html`
+- Get user approval
+
+### 2. Create in Library
+
+Create component in `vault/components/`:
+- Component code
+- Documentation
+- Demo in `vault/components/demos/`
+
+### 3. Verify with Playwright
+
+Run Playwright tests on the isolated component:
+- All states render correctly
+- Interactions work
+- No console errors
+
+### 4. Then Integrate
+
+Only after Playwright verification:
+- Import into feature
+- Connect to application state
+- Test in context
+
+## Linking Requirements
+
+When documenting a component:
+- Link to approved mockup: `Design: [[mockups/component-name]]`
+- Link to related components: `See also [[components/related]]`
+- Link to features using this component: `Used in [[features/feature-name]]`
+
+Example component doc header:
+
+```markdown
+# Button Component
+
+Design: [[mockups/button]]
+See also: [[components/icon]], [[components/spinner]]
+Used in: [[features/login]], [[features/checkout]]
+```
+
 ## Success Criteria
 
 - [ ] `npx shadow-cljs compile components` succeeds
