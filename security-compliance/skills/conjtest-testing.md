@@ -104,4 +104,3 @@ conftest test . -p policies/ -o tap     # TAP
 ## Related Skills
 
 - `policy-as-code` - Writing OPA policies
-- `terraform-iac` - Infrastructure to test

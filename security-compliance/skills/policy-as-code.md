@@ -134,4 +134,3 @@ policies/
 
 - `conftest-testing` - Policy testing
 - `threagile-analysis` - Risk source
-- `terraform-iac` - Policy targets

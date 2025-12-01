@@ -1,6 +1,6 @@
 ---
 name: beads-tasks
-description: Use when user wants to track tasks in git, manage dependencies between tasks, or needs offline-first task management.
+description: Use throughout ALL workflow phases to track tasks - from planning through verification. Beads is the primary task tracker for skillbook projects.
 requires:
   tools: [bd]
   skills: []
@@ -9,6 +9,10 @@ requires:
 # Beads Task Management
 
 Git-native task tracker stored in `.beads/` directory. Works offline, syncs with git.
+
+**CRITICAL: Use beads in EVERY workflow phase, not just development.**
+
+Beads tasks create a traceable record from inception to completion. Every phase produces tasks.
 
 ## Prerequisites
 
@@ -28,9 +32,57 @@ command -v bd >/dev/null || { echo "Install: npm install -g @beads/bd"; exit 1; 
 | `bd ready` | Show unblocked tasks |
 | `bd json` | JSON output for scripts |
 
-## Common Workflows
+## Phase-Based Task Creation
 
-### View Open Tasks
+**Create beads tasks as you enter each workflow phase:**
+
+### 1. Plan Phase
+```bash
+bd add "Brainstorm: <feature-name>"
+bd add "Write design document: <feature-name>"
+bd add "Write implementation plan: <feature-name>"
+```
+
+### 2. Document Phase
+```bash
+bd add "Write ADR: <decision-title>" --dep <plan-task-id>
+bd add "Update arc42 section: <section-name>"
+bd add "Define quality requirements: <feature-name>"
+```
+
+### 3. Model Phase
+```bash
+bd add "Create/update architecture model" --dep <adr-task-id>
+bd add "Generate C4 diagrams"
+bd add "Define Malli schemas: <domain>"
+bd add "Create threat model" --priority high  # if security-relevant
+bd add "Create UI mockup: <component>"        # if UI work
+```
+
+### 4. Test Phase
+```bash
+bd add "Write failing tests: <component>" --dep <schema-task-id>
+bd add "Review test design"
+```
+
+### 5. Develop Phase
+```bash
+bd add "Implement: <component>" --dep <test-task-id>
+bd add "Add to component library" --dep <implement-task-id>  # if UI
+bd add "Run quality checks"
+bd add "Code review: <component>"
+```
+
+### 6. Verify Phase
+```bash
+bd add "Run Playwright tests" --dep <implement-task-id>
+bd add "Get user approval: <feature-name>"
+bd add "Final code review before merge"
+```
+
+## Common Commands
+
+### View Tasks
 
 ```bash
 bd                    # All open tasks
@@ -41,9 +93,9 @@ bd -a                 # Include done tasks
 ### Create Tasks
 
 ```bash
-bd add "Implement authentication"
-bd add "Write tests" --dep bd-a3f8     # With dependency
-bd add "Fix bug" --priority high
+bd add "Task description"
+bd add "Task" --dep bd-a3f8     # With dependency
+bd add "Task" --priority high
 ```
 
 ### Update Tasks

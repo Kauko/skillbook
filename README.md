@@ -94,15 +94,6 @@ Git conventions and release management.
 | `git-lint-setup` | Git commit conventions (agents use gitmoji, humans commit freely) |
 | `milestoner-releases` | Changelog and release management with Milestoner |
 
-### infrastructure-ops
-
-Infrastructure as Code and observability.
-
-| Skill | Description |
-|-------|-------------|
-| `terraform-iac` | Generate Terraform from architecture, validate with policies |
-| `slo-sli-observability` | Define SLOs/SLIs, generate observability code |
-
 ### skillcraft
 
 Skills for creating AI skills.

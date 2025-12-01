@@ -12,6 +12,29 @@ PLAN → DOCUMENT → MODEL → TEST → DEVELOP → VERIFY
 
 Never skip phases. Never jump to code.
 
+**Process Weight:** This is an intentionally heavy workflow designed for thorough, design-first development. If you believe the full workflow is excessive for a particular task (e.g., a trivial bug fix), **ask the user** how to proceed rather than silently skipping phases. The user decides when to lighten the process, not Claude.
+
+## Task Tracking with Beads
+
+**Use beads throughout ALL phases, not just development.**
+
+Every phase produces beads tasks. This creates a traceable record of work from inception to completion.
+
+```bash
+# Initialize beads if not present
+[ -d .beads ] || bd init
+```
+
+Create tasks as you enter each phase:
+- **Plan:** `bd add "Brainstorm: <feature>" && bd add "Write implementation plan: <feature>"`
+- **Document:** `bd add "Write ADR: <decision>" && bd add "Update arc42 section: <section>"`
+- **Model:** `bd add "Create architecture model" && bd add "Generate C4 diagrams"`
+- **Test:** `bd add "Write failing tests for <component>"`
+- **Develop:** `bd add "Implement <component>" && bd add "Run quality checks"`
+- **Verify:** `bd add "Run Playwright tests" && bd add "Get user approval"`
+
+Mark tasks done as you complete them. Link tasks to their outputs in the vault.
+
 ## Phases
 
 ### 1. Plan

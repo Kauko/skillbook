@@ -64,12 +64,6 @@
       "strict": false
     },
     {
-      "name": "infrastructure-ops",
-      "description": "Infrastructure as Code with Terraform and observability with SLO/SLI definitions",
-      "source": "./infrastructure-ops",
-      "strict": false
-    },
-    {
       "name": "skillcraft",
       "description": "Skills for creating and managing AI skills including skill-seekers for automated skill creation",
       "source": "./skillcraft",

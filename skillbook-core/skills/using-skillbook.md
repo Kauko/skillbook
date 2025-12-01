@@ -23,6 +23,10 @@ Before implementing ANY feature, follow these phases in order:
 
 **NEVER skip phases. NEVER jump to code.**
 
+**Process Weight:** This workflow is intentionally heavy. If you think it's excessive for a task, **ask the user** how to proceed. Don't silently skip phases.
+
+**Task Tracking:** Use `beads-tasks` skill in EVERY phase. Create beads tasks as you enter each phase, mark them done as you complete work. This creates a traceable record.
+
 See `docs/workflow.md` for complete workflow documentation.
 
 ## Agents
@@ -68,7 +72,7 @@ When implementing features, dispatch the `skillbook:clojure-developer` agent. It
 - `malli-schemas` → `property-testing` → `guardrails-contracts`
 
 ### Requirements
-- `iso25010-quality`, `scenari-specs`, `slo-sli-observability`
+- `iso25010-quality`, `scenari-specs`
 
 ### Concurrent/distributed logic
 - `tla-concepts` → `recife-modeling`
@@ -83,7 +87,7 @@ When implementing features, dispatch the `skillbook:clojure-developer` agent. It
 - `playwright-testing` - verify component and feature
 
 ### Infrastructure
-- `terraform-iac`, `optimizing-dockerfiles`
+- `optimizing-dockerfiles`
 
 ### Code style
 - `clojure-style`
