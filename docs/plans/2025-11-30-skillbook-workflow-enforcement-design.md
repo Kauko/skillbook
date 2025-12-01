@@ -47,6 +47,9 @@ BRAINSTORMING (superpowers:brainstorming)
     ▼
 INITIALIZATION (project-init skill)
     ├─ Create vault/ structure
+    ├─ Create .claude/settings.json with tool permissions
+    ├─ Create .claude/settings.local.json.template for MCP configs
+    ├─ Configure Clojure paren repair hooks
     ├─ Create CLAUDE.md from template
     ├─ Set up quality tools
     └─ Initialize git workflow

@@ -60,9 +60,108 @@ Run the `project-init` skill to create:
 - Quality tool configs (.clj-kondo/, .cljfmt.edn, .splint.edn)
 - Git workflow setup
 
-### Step 4: Create CLAUDE.md
+### Step 4: Create Claude Code Settings
 
-Create CLAUDE.md in project root:
+Create `.claude/settings.json` with permissions for all skillbook tools:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(clj-nrepl-eval:*)",
+      "Bash(clj-kondo:*)",
+      "Bash(splint:*)",
+      "Bash(bb:*)",
+      "Bash(clojure:*)",
+      "Bash(clj:*)",
+      "Bash(shadow-cljs:*)",
+      "Bash(npx shadow-cljs:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(overarch:*)",
+      "Bash(structurizr-cli:*)",
+      "Bash(threagile:*)",
+      "Bash(opa:*)",
+      "Bash(conftest:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(mkdir:*)",
+      "Bash(rm:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": {
+          "tool": "Write",
+          "arguments": {
+            "file_path": "\\.clj[sc]?$"
+          }
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "clj-paren-repair-claude-hook --cljfmt \"$CLAUDE_FILE_PATH\""
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "tool": "Edit",
+          "arguments": {
+            "file_path": "\\.clj[sc]?$"
+          }
+        },
+        "hooks": [
+          {
+            "type": "command",
+            "command": "clj-paren-repair-claude-hook --cljfmt \"$CLAUDE_FILE_PATH\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Also create `.claude/settings.local.json.template` for user-specific settings:
+
+```json
+{
+  "_comment": "Copy this to settings.local.json and customize. This file is gitignored.",
+  "permissions": {
+    "allow": []
+  },
+  "mcpServers": {
+    "playwright": {
+      "_comment": "Configure Playwright MCP here"
+    },
+    "deepwiki": {
+      "_comment": "Configure deepwiki MCP here"
+    }
+  }
+}
+```
+
+Add to `.gitignore`:
+```
+.claude/settings.local.json
+```
+
+### Step 5: Create CLAUDE.md
+
+Create `CLAUDE.md` in project root:
 
 ```markdown
 # {Project Name}
@@ -89,11 +188,12 @@ Load the `using-skillbook` skill for the complete reference.
 - `skillbook:clojure-developer` - dispatch for feature implementation
 ```
 
-### Step 5: Report Completion
+### Step 6: Report Completion
 
 Summarize what was created:
 - Vault structure
 - Tool configurations
+- `.claude/settings.json` with permissions and hooks
 - CLAUDE.md
 - Any limitations due to missing tools
 
@@ -104,5 +204,8 @@ Hand back to main conversation.
 - [ ] All tools checked (missing ones reported)
 - [ ] Brainstorming completed with design document
 - [ ] vault/ structure created
+- [ ] `.claude/settings.json` created with tool permissions
+- [ ] `.claude/settings.local.json.template` created
+- [ ] Clojure paren repair hooks configured
 - [ ] CLAUDE.md created
-- [ ] Quality tools configured
+- [ ] Quality tools configured (.clj-kondo/, .cljfmt.edn, .splint.edn)
