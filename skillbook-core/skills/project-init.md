@@ -10,6 +10,23 @@ requires:
 
 Guide for initializing a new project with skillbook capabilities.
 
+## Project Folder Setup
+
+**If not already in a project directory**, ask the user for:
+1. Project name (used for folder name)
+2. Whether to initialize git
+
+```bash
+# Create and enter project folder
+mkdir -p <project-name>
+cd <project-name>
+
+# Optional: Initialize git
+git init
+```
+
+**If already in a project directory** (has `.git/`, `deps.edn`, `package.json`, etc.), skip folder creation and proceed with initialization.
+
 ## Recommended Skills by Project Type
 
 ### Clojure Project
